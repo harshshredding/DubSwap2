@@ -1,0 +1,68 @@
+ul{
+
+}
+#login-button{
+	width:50px%;
+	background-color: #662b92;
+	color: white;
+}
+.navbar-brand{
+	font-family: 'Cuprum', sans-serif;
+	font-size: 45px;
+}
+
+.navbar-header{
+	margin-top: 2%;
+	margin-bottom: 2%;
+}
+
+.navbar-right{
+	margin-top: 27px;
+}
+
+.navbar{
+	margin-bottom: 0px;
+}
+
+.jumbotron{
+	font-size:45px;
+	text-align: center;
+	background-color: #e2e2e2ab;
+	margin-bottom: 0px;
+
+}
+
+.row{
+	text-align: center;
+}
+
+.how-container{
+	background-color: ##ececec;
+}
+
+.how-jumbotron{
+	padding-bottom: 0px;
+}
+
+.how{
+	background-color: #517765;
+	color: white;
+}
+
+.how-container2{
+	background-color: #c8d2c3;
+}
+
+.how-jumbotron2{
+	padding-top: 0px;
+	font-family: 'Arima Madurai', cursive;
+}
+
+.btn-success{
+	font-size: 40px;
+	background-color: #5e9c5e;
+}
+
+.jumbotron3{
+	padding-top: 0px;
+}
