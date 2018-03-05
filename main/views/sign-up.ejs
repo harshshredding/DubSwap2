@@ -1,0 +1,23 @@
+<% include partials/header %>
+<link rel="stylesheet" href="/stylesheets/sign-up.css">
+</head>
+    <body>
+        <h1>Sign-up</h1>
+        
+        <div class="ui container">
+          <form class="ui form" action="/" method="POST">
+            <div class="field">
+              <label>UW email</label>
+              <input type="text" name="uw-id" placeholder="example@uw.edu" id="uw-id">
+            </div>
+            <div class="field">
+              <label>Password</label>
+              <input type="password" name="password" id="password">
+            </div>
+            <button class="ui button" type="submit">Submit</button>
+          </form>
+        </div>
+
+    </body>
+
+<% include partials/footer %>

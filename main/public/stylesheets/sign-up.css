@@ -1,0 +1,16 @@
+h1{
+     color:red;
+     text-align:center;
+}
+
+#uw-id{
+     width: 30%;
+}
+
+#password{
+     width: 30%;
+}
+
+.ui.container{
+     text-align: center;
+}
