@@ -1,6 +1,16 @@
 var express = require("express"),
 app = express(),
-bodyParser = require("body-parser");
+bodyParser = require("body-parser"),
+pool = require('./db/db-module.js');
+
+pool.query("CREATE TABLE lalabhi(id int, favnum int)", function(err, result){
+   if(err){
+      console.log(err);
+   }else{
+      console.log(result);
+   }
+});
+
 
 app.use(express.static(__dirname + '/public'));
 console.log(__dirname);
