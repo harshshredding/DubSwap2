@@ -37,11 +37,11 @@ app.get("/", function(req, res){
    res.render("home"); 
 });
 
-app.get("/secret1", function(req, res){
+app.get("/secret1",isLoggedIn, function(req, res){
    res.render("secret1");
 });
 
-app.get("/secret2", function(req, res){
+app.get("/secret2", isLoggedIn,function(req, res){
    res.render("secret2"); 
 });
 
@@ -80,9 +80,16 @@ app.post("/login", passport.authenticate("local"), function(req, res){
 });
 
 app.get("/logout", function(req, res){
-   req.send("you have been logged out");
-   req.logout;
+   req.logout();
+   res.redirect("/");
 });
+
+function isLoggedIn(req, res, next){
+   if(req.isAuthenticated()){
+      return next();
+   }
+   return res.redirect("/login");
+}
 
 
 
