@@ -1,7 +1,7 @@
 var bcrypt = require('bcrypt');
 var passport = require('passport')
   , LocalStrategy = require('passport-local').Strategy;
-var db = require('./db/db-module.js');
+var db = require('../db/db-module.js');
 
 passport.use(new LocalStrategy((username, password, cb) => {
   db.query('SELECT id, username, password, type FROM users WHERE username=$1', [username], (err, result) => {
@@ -41,4 +41,6 @@ passport.deserializeUser((id, cb) => {
 
     cb(null, results.rows[0]);
   });
-})
+});
+
+module.exports = passport;
