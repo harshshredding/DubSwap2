@@ -8,13 +8,17 @@ passport.use(new LocalStrategy((username, password, cb) => {
     if(err) {
       console.log('Error when selecting user on login :' +  err);
       return cb(err);
+    
     }
 
-    if(result.rows.length > 0) {
+    if(result.rowCount > 0) {
       const first = result.rows[0];
       bcrypt.compare(password, first.password, function(err, res) {
-        if(res) {
-          cb(null, { id: first.id, username: first.username, type: first.type });
+        if(err){
+          console.log("problem in bcrypting : " + err);
+        }
+        if(res && first.type =='true') {
+          cb(null, {username: first.username, type: first.type , id: first.id});
          } else {
           cb(null, false);
          }

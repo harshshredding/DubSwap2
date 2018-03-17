@@ -11,11 +11,11 @@ pool.on('error', (err, client) => {
 });
 
 
-module.exports = {
-  query: (text, params, callback) => {
-    return pool.query(text, params, callback);
-  }
-};
+
+
+
+module.exports = pool;
+
 
 
 
