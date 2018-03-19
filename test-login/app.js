@@ -50,7 +50,7 @@ app.get("/secret2", isLoggedIn,function(req, res){
 });
 
 app.get("/register", function(req, res){
-   res.render("register");
+   res.render("register", {alreadyExists : false});
 });
 
 
@@ -62,23 +62,33 @@ app.post("/register", function(req, res){
    var salt = bcrypt.genSaltSync(saltRounds);
    var hash = bcrypt.hashSync(myPlaintextPassword, salt);
    var modifiedHash = helper.formatHash(hash);
-   
-   pool.query("INSERT INTO users values($1, $2, $3)",[req.body.username, hash, 'false'], function(err, result){
+   pool.query("SELECT * from users where username=$1",[req.body.username], function(err, result){
       if(err){
          console.log(err);
       }else{
-         console.log(result);
-      }
-   });
-   
-   pool.query("INSERT INTO verificationtable values($1, $2)",[req.body.username, modifiedHash], function(err, result){
-      if(err){
-         console.log(err);
-      }else{
-         console.log(result);
-      }
-   });
-   res.redirect('/verification/sendEmail/' + modifiedHash + '/' + req.body.username);
+         if(result.rowCount == 0){
+            pool.query("INSERT INTO users values($1, $2, $3)",[req.body.username, hash, 'false'], function(err, result){
+               if(err){
+                  console.log(err);
+               }else{
+                  console.log(result);
+               }
+            });
+            pool.query("INSERT INTO verificationtable values($1, $2)",[req.body.username, modifiedHash], function(err, result){
+               if(err){
+                  console.log(err);
+               }else{
+                  console.log(result);
+               }
+            });
+            
+            res.redirect('/verification/sendEmail/' + modifiedHash + '/' + req.body.username);
+         }else{
+            res.render('register', {alreadyExists : true});
+         }
+   } 
+});
+   //res.redirect('/verification/sendEmail/' + modifiedHash + '/' + req.body.username);
 });
 
 
