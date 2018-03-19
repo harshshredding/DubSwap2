@@ -6,7 +6,9 @@ user = require('./test/test-email-verification/sendEmail.js'),
 passport = require('./config/passport.js'),
 session = require('express-session'),
 bcrypt = require("bcrypt"),
-emailer = require('./test/test-email-verification/sendEmail.js');
+emailer = require('./test/test-email-verification/sendEmail.js'),
+helper = require('./helper.js');
+
 
 app.use(session({
   secret: 'keyboard cat',
@@ -52,11 +54,14 @@ app.get("/register", function(req, res){
 });
 
 
+
+
 app.post("/register", function(req, res){
    const saltRounds = 10;
    const myPlaintextPassword = req.body.password;
    var salt = bcrypt.genSaltSync(saltRounds);
    var hash = bcrypt.hashSync(myPlaintextPassword, salt);
+   var modifiedHash = helper.formatHash(hash);
    
    pool.query("INSERT INTO users values($1, $2, $3)",[req.body.username, hash, 'false'], function(err, result){
       if(err){
@@ -66,21 +71,26 @@ app.post("/register", function(req, res){
       }
    });
    
-   pool.query("INSERT INTO verificationtable values($1, $2)",[req.body.username, hash], function(err, result){
+   pool.query("INSERT INTO verificationtable values($1, $2)",[req.body.username, modifiedHash], function(err, result){
       if(err){
          console.log(err);
       }else{
          console.log(result);
       }
    });
-   emailer.sendEmail(hash, req.body.username);
-   res.send("A verification email has been sent to your uw email account.");
+   res.redirect('/verification/sendEmail/' + modifiedHash + '/' + req.body.username);
 });
 
 
 app.get("/login", function(req, res){
-   res.render("login"); 
+   res.render("login", {username : 'harshv'}); 
 });
+
+app.get("/test", function(req, res){
+   res.render("testEjs", {username : 'hello'}); 
+});
+
+
 
 
 app.post("/login", passport.authenticate("local"), function(req, res){
@@ -90,19 +100,22 @@ app.post("/login", passport.authenticate("local"), function(req, res){
 
 app.get("/verification/:hash", function(req, res) {
    var hash = req.params.hash;
+
    
    pool.query("select username from verificationtable where hash=$1", [hash], function(err, result) {
        console.log(result);
        if (err) {
            console.log(err);
        }
+       
        if (result != null && result.rowCount > 0) {
-           pool.query("update users set type='true' where password=$1", [hash], function(err, result) {
+           var name = result.rows[0].username;
+           pool.query("update users set type='true' where username=$1", [name], function(err, result) {
                if (err) {
                    console.log(err);
                }
            });
-            res.render('verified');
+            res.render('verified', {username : name});
             pool.query("delete from verificationtable where hash=$1", [hash], function(err, result){
                     if(err){
                         console.log(err);
@@ -115,6 +128,15 @@ app.get("/verification/:hash", function(req, res) {
    });
    
 });
+
+
+app.get("/verification/sendEmail/:modifiedHash/:username", function(req, res){
+   emailer.sendEmail(req.params.modifiedHash, req.params.username);
+   res.render("emailSent", {username : req.params.username, modifiedHash : req.params.modifiedHash });
+});
+   
+
+
 
 app.get("/logout", function(req, res){
    req.logout();
