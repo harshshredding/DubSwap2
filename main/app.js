@@ -62,3 +62,7 @@ app.listen(process.env.PORT, process.env.IP, function(){
    console.log("The server has started my dear"); 
 });
 
+app.get("/dummyHome", function(req, res){
+   res.render("dummyHome"); 
+});
+

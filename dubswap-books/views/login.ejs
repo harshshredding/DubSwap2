@@ -1,0 +1,19 @@
+<html>
+    <head>
+        <script>
+            var username = <%- username %>;
+            alert('hello');
+        </script>
+    </head>
+    <body>
+    
+        <h1>Login</h1>
+        <form action="\login" method="POST">
+            <input type="text" name="username" placeholder="usrname"><br>
+            <input type="password" name="password" placeholder="password">
+            <div><a href="\forgotPassword\requestChange">forgot password</a></div>
+            <button>login</button>
+        </form>
+        <a href="\">go back to home</a>
+    </body>
+</html>
