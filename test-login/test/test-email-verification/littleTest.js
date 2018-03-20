@@ -1,21 +1,11 @@
-var pool = require("../../db/db-module.js");
-
-var howdi = 'hola';
-
-pool.query("SELECT username from verificationtable",[],function(err, result){
-  if(err){
-    console.log(err);
-  }
-  console.log(result.rows[0].username);
+var pool = require('../../db/db-module.js');
+pool.query('select * from users where username=$1', ['harshv'])
+.then((results)=>{
+    console.log(results);
+    return pool.query('select * from users where username=$1', ['harshv']);
+})
+.then((results)=>{
+    console.log(results);
 });
 
-hash = '$2a$10$cazkhkge8fMXdrgtqOprku4.WO.YpyFwiTyS7WhZAS4Pl1ezcDnkW';
-
-pool.query("update users set type='true' where password=$1", [hash], function(err, result) {
-               
-               if (err) {
-                   console.log(err);
-               }
-               
-           });
 

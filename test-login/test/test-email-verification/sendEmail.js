@@ -33,7 +33,7 @@ module.exports = {
                             });
                     }
                     ,
-        sendEmail: function(hash, username){
+        sendEmail: function(hash, username, type){
                 let transporter = nodemailer.createTransport({
                     service: 'gmail',
                     auth: {
@@ -47,8 +47,8 @@ module.exports = {
                     from: '"Harsh Verma 👻" <harshshredding@gmail.com>', // sender address
                     to: username + '@uw.edu', // list of receivers
                     subject: 'Verification link', // Subject line
-                    text: 'https://dub-swap-harshv.c9users.io/verification/' + hash, // plain text body
-                    html: '<b>https://dub-swap-harshv.c9users.io/verification/' + hash + '</b>' // html body
+                    text: 'https://dub-swap-harshv.c9users.io/' + type +'/' + hash, // plain text body
+                    html: '<b>https://dub-swap-harshv.c9users.io/' + type +'/' + hash + '</b>' // html body
                 };
             
                 // send mail with defined transport object

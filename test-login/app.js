@@ -100,6 +100,99 @@ app.get("/test", function(req, res){
    res.render("testEjs", {username : 'hello'}); 
 });
 
+app.get("/forgotPassword/requestChange", function(req, res){
+   res.render('passwordRequestChange', {doesntExist : false});
+});
+
+app.get("/forgotPassword/requestChange/:hash", function(req, res){
+   var hash = req.params.hash;
+   pool.query("select username from passwordchangeverification where password=$1", [hash], function(err, result) {
+       
+       if (err) {
+           console.log(err);
+       }else{
+          if (result != null && result.rowCount > 0) {
+              var name = result.rows[0].username;
+               res.render('enterNewPassword', {oldHash: hash, username: name});
+               // pool.query("delete from passwordchangeverification where hash=$1", [hash], function(err, result){
+               //        if(err){
+               //             console.log(err);
+               //        }
+               //        console.log('stuff deleted');
+               // });
+          }else{
+               res.send('There was a problem verifying your identity, please try again');
+          }
+       }
+   });
+   
+   
+});
+
+app.post("/forgotPassword/requestChange/:oldHash/:username", function(req, res){
+   var oldHash = req.params.oldHash;
+   const saltRounds = 10;
+   const myPlaintextPassword = req.body.password1;
+   var salt = bcrypt.genSaltSync(saltRounds);
+   var newHash = bcrypt.hashSync(myPlaintextPassword, salt);
+   
+   var username = req.params.username;
+   pool.query("select username from passwordchangeverification where password=$1", [oldHash], function(err, result) {
+      if(err){
+         console.log(err);
+      }else{
+         if (result != null && result.rowCount > 0) {
+            // things are safe here
+            pool.query("update users set password=$1 where username=$2", [newHash,username], function(err, result) {
+                if(err){
+                   console.log(err);
+                }else{
+                   console.log(username.charAt(0));
+                   console.log(username);
+                   console.log('harshv');
+                   
+                   console.log(newHash);
+                   res.send("<h1> Your password has been updated.</h1>");
+                    pool.query("delete from passwordchangeverification where password=$1", [oldHash], function(err, result) {
+                       if (err) {
+                          console.log(err);
+                       }
+                       console.log('stuff deleted');
+                    });
+                }
+            });
+         }else{
+            res.send("There was some problem in verifying your identity.")
+         }
+      }
+   });
+   
+});
+
+app.post("/forgotPassword/requestChange/sendEmail", function(req, res){
+   var email = req.body.email;
+   var username = helper.parseEmail(email);
+   pool.query('select * from users where username=$1', [username], function(err, results){
+      if(err){
+         console.log(err);
+      }else{
+         if(results.rowCount == 0){
+            res.render('passwordRequestChange', {doesntExist: true});
+         }else{
+                var hash = results.rows[0].password;
+                var modifiedHash = helper.formatHash(hash);
+                emailer.sendEmail(modifiedHash, username, 'forgotPassword/requestChange');
+                pool.query("INSERT INTO passwordchangeverification values($1, $2)",[username, modifiedHash])
+               .then((result)=>{
+                  console.log('I have reached');
+                  res.render('passwordChangeEmailSent', {username : username});
+               }).catch(e => console.error(e.stack));
+               
+         }
+      }
+   });
+});
+
 
 
 
@@ -141,7 +234,7 @@ app.get("/verification/:hash", function(req, res) {
 
 
 app.get("/verification/sendEmail/:modifiedHash/:username", function(req, res){
-   emailer.sendEmail(req.params.modifiedHash, req.params.username);
+   emailer.sendEmail(req.params.modifiedHash, req.params.username, 'verification');
    res.render("emailSent", {username : req.params.username, modifiedHash : req.params.modifiedHash });
 });
    
