@@ -1,0 +1,45 @@
+.carousel-item{
+    height: 350px;
+}
+
+img{
+    width: 100%;
+}
+
+.container{
+    margin-bottom: 2rem;
+}
+
+
+
+.product{
+    height: 400px;
+}
+
+.product img{
+    height: 70%;
+}
+
+.card-text{
+    height:30%;
+    background-color: white;
+    border: 1px solid #d2daed;
+}
+
+.cart-button-container{
+    text-align: center;
+}
+
+.card-item{
+    padding:0.2rem;
+    height:33%;
+    padding-left:0.5rem;
+}
+
+
+
+.carousel-container{
+    margin-top: 2rem;
+}
+
+

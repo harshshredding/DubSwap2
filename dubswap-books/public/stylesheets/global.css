@@ -1,0 +1,12 @@
+.navbar {
+    padding: 1rem 1rem;
+    border-bottom: 2px solid rgb(210, 218, 237);
+}
+
+body{
+    background-color: rgb(249, 251, 255);
+}
+
+#sign-in-button{
+    margin-right: 1rem;
+}

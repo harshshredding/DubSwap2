@@ -1,19 +1,21 @@
-<html>
-    <head>
-        <script>
-            var username = <%- username %>;
-            alert('hello');
-        </script>
-    </head>
-    <body>
+<% include partials/header %>
+
+<link rel="stylesheet" href="/stylesheets/login.css">
+
+        <div class="login-wrapper">
+            <div class="container login-container rounded">
+                <h1>Login</h1>
+                <form action="\login" method="POST">
+                    <label for="uname"><b>UW net-id</b></label>
+                    <input type="text" name="username" placeholder="usrname"><br>
+                    
+                    <label for="psw"><b>Password</b></label>
+                    <input type="password" name="password" placeholder="password">
+                    
+                    <div id="forgot-password"><a href="\forgotPassword\requestChange">forgot password</a></div>
+                    <button class="btn btn-primary" id="submit-button">Submit</button>
+                </form>
+            </div>
+        </div>
+<% include partials/footer %>
     
-        <h1>Login</h1>
-        <form action="\login" method="POST">
-            <input type="text" name="username" placeholder="usrname"><br>
-            <input type="password" name="password" placeholder="password">
-            <div><a href="\forgotPassword\requestChange">forgot password</a></div>
-            <button>login</button>
-        </form>
-        <a href="\">go back to home</a>
-    </body>
-</html>
