@@ -6,8 +6,9 @@ DubSwap has two main objectives
 
 College communities are different that other communities. People in college form a network that is densely connected, and college
 students work in close proximities. Because college students are on campus while they work, it is not hard for them to meet and trade goods.
+*With Dubswap, we try to remove the middle-man.*
 Since college students tend to be *well behaved*, there is a low chance of getting cheated by another college student during trade.
-Moreover, the nature of the college network makes it more suitable for the kind of renting facility DubSwap is trying to achieve. 
+Hence, the nature of the college network makes it more suitable for the kind of renting facility DubSwap is trying to achieve. 
 
 A succesfull *swap* has three parts 
 * Traders find each other on Dubswap 
