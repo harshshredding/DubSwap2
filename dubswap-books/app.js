@@ -1,3 +1,5 @@
+// boiler-plate
+// ***********************************
 var express = require("express"),
 app = express(),
 bodyParser = require("body-parser"),
@@ -16,20 +18,11 @@ app.use(session({
   saveUninitialized: true
 }));
 
-// pool.query("CREATE TABLE lalabhi(id int, favnum int)", function(err, result){
-//    if(err){
-//       console.log(err);
-//    }else{
-//       console.log(result);
-//    }
-// });
-
 app.use(passport.initialize());
+
 app.use(passport.session());
 
-
 app.use(express.static(__dirname + '/public'));
-console.log(__dirname);
 
 app.set("view engine", "ejs");
 app.use(express.static("public"));
@@ -37,25 +30,52 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+// All routes
+//***************************************
+
+// renders homepage
 app.get("/", function(req, res){
    res.render("home"); 
 });
 
+
+// renders secret1.html, which was used to test user authenticationm.
 app.get("/secret1",isLoggedIn, function(req, res){
    res.render("secret1");
 });
 
+// renders secret2.html, which was used to test user authenticationm.
 app.get("/secret2", isLoggedIn,function(req, res){
    res.render("secret2"); 
 });
 
+
+// renders registration page
 app.get("/register", function(req, res){
    res.render("register", {alreadyExists : false});
 });
 
 
 
-
+// - Receives a post request with password and username of the newly registered user.
+// - Hashes password and stores it in the database.
+// - Formats the hash before sending the verificaiton email because the link contained in the
+//   verification email shouldn't contain slashes.
+// - sends a verification email
+// - stores the hash in a verificationtable table in the database, so that the link in the 
+//    verification email can verify the user.
 app.post("/register", function(req, res){
    const saltRounds = 10;
    const myPlaintextPassword = req.body.password;
@@ -88,17 +108,15 @@ app.post("/register", function(req, res){
          }
    } 
 });
-   //res.redirect('/verification/sendEmail/' + modifiedHash + '/' + req.body.username);
+   
 });
 
 
+// renders the login form
 app.get("/login", function(req, res){
    res.render("login", {username : 'harshv'}); 
 });
 
-app.get("/test", function(req, res){
-   res.render("testEjs", {username : 'hello'}); 
-});
 
 app.get("/forgotPassword/requestChange", function(req, res){
    res.render('passwordRequestChange', {doesntExist : false});
@@ -129,6 +147,11 @@ app.get("/forgotPassword/requestChange/:hash", function(req, res){
    
 });
 
+
+// Takes in the old hash of the previous password and uses it to identify user.
+// Then it updates the records by replacing the old hash at its position in the
+// database by the new hash.
+// Old-hash is also used to verify the user. 
 app.post("/forgotPassword/requestChange/:oldHash/:username", function(req, res){
    var oldHash = req.params.oldHash;
    const saltRounds = 10;
@@ -169,6 +192,9 @@ app.post("/forgotPassword/requestChange/:oldHash/:username", function(req, res){
    
 });
 
+// sends an email with a link to the user so that he or she can change password. 
+// Uses the hash of their current password as the verification link.
+// there might be some serious issues with using the hash of the current password.
 app.post("/forgotPassword/requestChange/sendEmail", function(req, res){
    var email = req.body.email;
    var username = helper.parseEmail(email);
@@ -195,12 +221,13 @@ app.post("/forgotPassword/requestChange/sendEmail", function(req, res){
 
 
 
-
+// uses passport to log the user in.
 app.post("/login", passport.authenticate("local"), function(req, res){
   const { user } = req;
   res.redirect("/");
 });
 
+// Verifies the user after user has click on the verification link in the email they received.
 app.get("/verification/:hash", function(req, res) {
    var hash = req.params.hash;
 
@@ -233,6 +260,7 @@ app.get("/verification/:hash", function(req, res) {
 });
 
 
+// sends a verification email with the modified hash to the person corresponding with :username
 app.get("/verification/sendEmail/:modifiedHash/:username", function(req, res){
    emailer.sendEmail(req.params.modifiedHash, req.params.username, 'verification');
    res.render("emailSent", {username : req.params.username, modifiedHash : req.params.modifiedHash });
@@ -240,12 +268,13 @@ app.get("/verification/sendEmail/:modifiedHash/:username", function(req, res){
    
 
 
-
+// logs the user out using passport
 app.get("/logout", function(req, res){
    req.logout();
    res.redirect("/");
 });
 
+// a middleware which checks whether a user is logged in
 function isLoggedIn(req, res, next){
    if(req.isAuthenticated()){
       return next();
@@ -253,9 +282,6 @@ function isLoggedIn(req, res, next){
    return res.redirect("/login");
 }
 
-app.get("/dummyHome", function(req, res){
-   res.render("dummyHome"); 
-});
 
 
 
@@ -264,8 +290,8 @@ app.get("/dummyHome", function(req, res){
 
 
 
-
-
+// Boiler plate again, 
+// this starts the server
 app.listen(process.env.PORT, process.env.IP, function(){
    console.log("The server has started my dear hoho"); 
 });

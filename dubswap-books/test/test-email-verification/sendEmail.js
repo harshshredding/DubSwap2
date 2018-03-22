@@ -1,18 +1,10 @@
 var pool = require("../../db/db-module.js");
 var nodemailer = require("nodemailer");
 
-var a = '$2a$10$14INzCWKVKC7onul9zeeE.FUD4dw.P1bVSPTlswIYIKQ1Neog9yXC';
-
-pool.query("select username from verificationtable where hash=$1",[a], function(err, result){
-  if(err){
-    console.log(err);
-  }else{
-    console.log(result);
-  }
-});
 
 
 module.exports = {
+        // verifies user in the database after a verificaiton email has been received.
         permitUser: function(hash){
                             console.log(typeof hash);
                             console.log(hash);
@@ -33,6 +25,8 @@ module.exports = {
                             });
                     }
                     ,
+        // sends an email with the given hash appended to the link to username@uw.edu and
+        // 'type' parameter dictates which kind of email it is.
         sendEmail: function(hash, username, type){
                 let transporter = nodemailer.createTransport({
                     service: 'gmail',
@@ -64,18 +58,4 @@ module.exports = {
                     // Preview URL: https://ethereal.email/message/WaQKMgKddxQDoou...
                 });
         }
-        ,
-        deleteData: function(hash){
-            
-                        //     pool.query("delete from verificationtable where hash=$1", [hash + ''], function(err, result){
-                         
-                        // if(err){
-                        //     console.log(err);
-                        // }
-                        // if(result != undefined && result.rowCount > 0){
-                        //     return true;
-                        // }
-                        // return false;
-                        //     });
-                    }
 };

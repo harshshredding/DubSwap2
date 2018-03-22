@@ -1,3 +1,4 @@
+// Some random test file
 var bcrypt = require("bcrypt");
 const saltRounds = 10;
 const myPlaintextPassword = '***REMOVED***';
