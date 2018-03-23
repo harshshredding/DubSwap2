@@ -10,6 +10,9 @@ session = require('express-session'),
 bcrypt = require("bcrypt"),
 emailer = require('./test/test-email-verification/sendEmail.js'),
 helper = require('./helper.js');
+var multer = require('multer');
+var path = require('path');
+var fs = require('fs');
 
 
 app.use(session({
@@ -53,7 +56,7 @@ app.get("/", function(req, res){
 
 // renders secret1.html, which was used to test user authenticationm.
 app.get("/secret1",isLoggedIn, function(req, res){
-   res.render("secret1");
+   res.send(req.user);
 });
 
 // renders secret2.html, which was used to test user authenticationm.
@@ -94,6 +97,13 @@ app.post("/register", function(req, res){
                   console.log(result);
                }
             });
+            fs.mkdir("users/" + req.body.username, function(err){
+               if(err){
+                  console.log("error while making directory : " + err);
+               }else{
+                  console.log("some folder was created, check it out");
+               }
+            });
             pool.query("INSERT INTO verificationtable values($1, $2)",[req.body.username, modifiedHash], function(err, result){
                if(err){
                   console.log(err);
@@ -101,8 +111,9 @@ app.post("/register", function(req, res){
                   console.log(result);
                }
             });
+            emailer.sendEmail(modifiedHash, req.body.username, 'verification');
             
-            res.redirect('/verification/sendEmail/' + modifiedHash + '/' + req.body.username);
+            res.redirect('/verification/sendEmail/' + req.body.username);
          }else{
             res.render('register', {alreadyExists : true});
          }
@@ -261,9 +272,8 @@ app.get("/verification/:hash", function(req, res) {
 
 
 // sends a verification email with the modified hash to the person corresponding with :username
-app.get("/verification/sendEmail/:modifiedHash/:username", function(req, res){
-   emailer.sendEmail(req.params.modifiedHash, req.params.username, 'verification');
-   res.render("emailSent", {username : req.params.username, modifiedHash : req.params.modifiedHash });
+app.get("/verification/sendEmail/:username", function(req, res){
+   res.render("emailSent", {username : req.params.username });
 });
    
 
@@ -274,6 +284,41 @@ app.get("/logout", function(req, res){
    res.redirect("/");
 });
 
+
+
+app.get("/profile", isLoggedIn, function(req, res){
+   res.render("profile", {username: req.user.username});
+});
+
+app.get("/profile2", function(req, res){
+    res.render("profile", {username: 'harshv'});
+});
+
+
+
+let upload = multer({
+    storage: multer.diskStorage({
+        destination: (req, file, callback) => {
+              let type = req.params.type;
+              let path = './users/' + type;
+              if (!fs.existsSync(path)) {
+                  fs.mkdirsSync(path);
+              }
+              callback(null, path); 
+        }
+    , 
+        filename: (req, file, callback) => {
+      //originalname is the uploaded file's name with extn
+            callback(null, file.originalname);
+        }
+    })
+});
+
+app.post("/upload/:type", [ isLoggedIn, upload.single('myImage')] ,(req, res)=>{
+    res.send("hohoho you just uploaded something");
+});
+
+
 // a middleware which checks whether a user is logged in
 function isLoggedIn(req, res, next){
    if(req.isAuthenticated()){
@@ -281,6 +326,8 @@ function isLoggedIn(req, res, next){
    }
    return res.redirect("/login");
 }
+
+
 
 
 

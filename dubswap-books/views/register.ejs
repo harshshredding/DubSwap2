@@ -6,6 +6,11 @@
             <div class="container login-container rounded">
                 <h1>Register</h1>
                 <form action="\register" method="POST">
+                    <div id="message2">
+                        <% if(alreadyExists){ %>
+                        <%= 'User already exists'%>    
+                        <% } %>
+                    </div>
                     <label for="uname"><b>UW net-id</b></label>
                     <input type="text" name="username" placeholder="usrname"><br>
                     
@@ -26,7 +31,6 @@
         
         
         <script>
-            alert("hi");
             var button = document.getElementById("submit-button");
             var check = function() {
               if (document.getElementById('password').value ==

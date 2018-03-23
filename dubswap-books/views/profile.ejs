@@ -38,7 +38,7 @@
               <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
             </li>
             <li class="nav-item" id="profile-stuff">
-              <span id="username-nav"></span>
+              <span id="username-nav"><%= username %></span>
               <img id="profile-image">
             </li>
           </ul>
@@ -49,3 +49,42 @@
           
         </div>
       </nav>
+      
+      
+<link rel="stylesheet" href="/stylesheets/profile.css">
+
+
+    
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+<!------ Include the above in your HEAD tag ---------->
+
+<div class="container">
+	<div class="row">
+        <div class="profile-header-container">   
+    		<div class="profile-header-img">
+                <img class="img-circle" src="//lh3.googleusercontent.com/-6V8xOA6M7BA/AAAAAAAAAAI/AAAAAAAAAAA/rzlHcD0KYwo/photo.jpg?sz=120" />
+                <!-- badge -->
+                <div class="rank-label-container">
+                    <span class="label label-default rank-label" id="username"><%= username %></span>
+                </div>
+            </div>
+        </div> 
+	</div>
+</div>
+
+<div>
+        <h1>Upload a file</h1>
+        <form action="/upload/<%= username %>" method="POST" enctype="multipart/form-data">
+            <div>
+                <input name="myImage" type="file">
+            </div>
+            <button class="btn btn-primary" id="submit-button">Submit</button>
+        </form>
+</div>
+
+
+
+
+
+<% include partials/footer %>

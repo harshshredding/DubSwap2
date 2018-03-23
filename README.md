@@ -18,7 +18,7 @@ This is good because security is a major issue in markets where you rent goods t
 A succesfull *swap* has three parts 
 * Traders find each other on Dubswap 
 * Traders communicate with each other on Dubswap
-* Traders meet at a location( usually a campus location) to trade goods(classes, rent books).
+* Traders meet at a location(usually on campus) to trade goods(classes, rent books).
 
 
 
