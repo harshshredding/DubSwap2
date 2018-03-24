@@ -31,6 +31,11 @@ app.set("view engine", "ejs");
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({extended: true}));
 
+app.use(function (err, req, res, next) {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+
 
 
 
@@ -49,8 +54,16 @@ app.use(bodyParser.urlencoded({extended: true}));
 //***************************************
 
 // renders homepage
-app.get("/", function(req, res){
-   res.render("home"); 
+// app.get("/", , function(req, res){
+//   res.render("home"); 
+// });
+
+app.get("/", isLoggedInHome, function(req, res) {
+    res.render("home", {username : req.user.username});    
+});
+
+app.get("/home", function(req, res){
+   res.render("home", {username: null}); 
 });
 
 
@@ -326,6 +339,18 @@ function isLoggedIn(req, res, next){
    }
    return res.redirect("/login");
 }
+
+function isLoggedInHome(req, res, next){
+    if(req.isAuthenticated()){
+      return next();
+    }
+    return res.redirect("/home");
+}
+
+
+
+
+
 
 
 
