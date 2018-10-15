@@ -1,4 +1,3 @@
-<!doctype html>
 <html lang="en">
   <head>
     <!-- Required meta tags -->
@@ -7,6 +6,7 @@
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <link rel="stylesheet" href="/stylesheets/global.css">
     <title>DubSwap home</title>
   </head>
@@ -55,7 +55,7 @@
            <% if(username != null){ %>
             
             
-            <a href="/offerings" class="btn btn-outline-success my-2 my-sm-0" id="sign-in-button" type="submit">My Offerings</a>
+            <a href="#" class="btn btn-outline-success my-2 my-sm-0" id="sign-in-button" type="submit">My Offerings</a>
             <a href="#" class="btn btn-outline-success my-2 my-sm-0" id="sign-up-button" type="submit">My Transactions</a>
             <a href="\profile" id="menu-id-div"><%= username %></a>
             <div class="nav-item dropdown">
@@ -73,48 +73,95 @@
             <% } %>
           </form>
           
+          
         </div>
       </nav>
       
 <link rel="stylesheet" href="/stylesheets/global.css">
 
 
-<link rel="stylesheet" href="/stylesheets/profile.css">
-
-
-
-    
-<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
-<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
-<!------ Include the above in your HEAD tag ---------->
-
 <div class="container">
-	<div class="row">
-        <div class="profile-header-container">   
-    		<div class="profile-header-img">
-                <img class="img-circle" src="//lh3.googleusercontent.com/-6V8xOA6M7BA/AAAAAAAAAAI/AAAAAAAAAAA/rzlHcD0KYwo/photo.jpg?sz=120" />
-                <!-- badge -->
-                <div class="rank-label-container">
-                    <span class="label label-default rank-label" id="username"><%= username %></span>
-                </div>
-            </div>
-        </div> 
-	</div>
+  <form action="/addOffering" method="POST" enctype="multipart/form-data">
+
+      
+      <label for="itemName"><b>Item name</b></label>
+      <input type="text" name="itemName" placeholder=""><br>
+      
+      <label for="Price"><b>rent per month</b></label>
+      <input type="text" name="price" placeholder=""><br>
+      
+      <label for="itemType"><b>Item type</b></label>
+      <input type="text" name="itemType" placeholder=""><br>
+      
+      <label for="itemModel"><b>Author/model</b></label>
+      <input type="text" name="itemModel" id="password" placeholder=""><br><br>
+      
+      <label for="comment"><b>Item description<b></label>
+      <textarea class="form-control" rows="5" id="comment" name="description" placeholder=""></textarea><br><br>
+      
+      <label for="displayPicture"><b>Upload Display Picture</b></label>
+      <input type='file' name='dp' onchange="readURL(this);" />
+      <div>
+      <img id="blah" src="#" alt="your image" />
+      </div>
+      
+       <label for="threePictures"><b>3 More pictures</b></label>
+       <input type='file' name='otherImages' onchange="previewFiles();" id="files" multiple/>
+       <div id="preview">
+         
+       </div>
+      
+      <button class="btn btn-primary" id="submit-button">Submit</button>
+      </form>
+      
+      <script>
+        function readURL(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+
+            reader.onload = function (e) {
+                $('#blah')
+                    .attr('src', e.target.result)
+                    .width('50%')
+            };
+
+            reader.readAsDataURL(input.files[0]);
+           }
+       }
+       
+       function previewFiles() {
+
+            var preview = document.querySelector('#preview');
+            var files   = document.querySelector('#files').files;
+          
+            function readAndPreview(file) {
+          
+              // Make sure `file.name` matches our extensions criteria
+              
+                var reader = new FileReader();
+          
+                reader.addEventListener("load", function () {
+                  var image = new Image();
+                  
+                  image.title = file.name;
+                  image.src = this.result;
+                  
+                  image.style.width = "33%";
+                  image.style.padding = "10px";
+                  
+                  preview.appendChild( image );
+                }, false);
+          
+                reader.readAsDataURL(file);
+              
+          
+            }
+          
+            if (files) {
+              [].forEach.call(files, readAndPreview);
+            }
+
+        }
+      </script>
+  
 </div>
-
-<div>
-        <h1>Upload a file</h1>
-        <form action="/upload" method="POST" enctype="multipart/form-data">
-            <div>
-                <input type='file' name='myImage' multiple />
-            </div>
-            <button class="btn btn-primary" id="submit-button">Submit</button>
-        </form>
-</div>
-
-
-
-
-
-
-<% include partials/footer %>

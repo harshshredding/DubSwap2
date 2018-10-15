@@ -5,16 +5,51 @@ var multer = require('multer');
 var ejs = require('ejs');
 var path = require('path');
 var fs = require('fs');
+var mkdirp = require('mkdirp');
 const app = express();
 app.set("view engine", "ejs");
-var dir = 'users/harshv';
 
- if (!fs.existsSync(dir)){
-     fs.mkdirSync(dir);
- }
+
+var dir = 'users/harshv/holala/gopi';
+
+
+mkdirp('users/harshv/holala/gopi', function (err) {
+    if (err) console.error(err)
+    else console.log('pow!')
+});
 console.log(__dirname);
 app.use(express.static(__dirname + '/public'));
-var dirname = __dirname + '/public' + '/dir';
+var dirname = __dirname + '/users' + '/harshv';
+console.log(dirname);
+
+//get the list of jpg files in the image dir
+function getImages(imageDir, callback) {
+    var fileType = '.jpg',
+        files = [], i;
+    fs.readdir(imageDir, function (err, list) {
+        for(i=0; i<list.length; i++) {
+            if(path.extname(list[i]) === fileType) {
+                files.push(list[i]); //store the file name into the array files
+            }
+        }
+        callback(err, files);
+    });
+}
+
+getImages(__dirname + '/users' + '/harshv', function(err, files){
+  if(err){
+    console.log("there was some error reading files");
+    console.log(err);
+  }else{
+    console.log("printing files");
+    console.log(files.length);
+    for(var i=0; i < files.length; i++){
+      console.log(files[i]);
+    }
+  }
+});
+
+// tests a way to read all the images names from a folder. 
 fs.readdir(dirname, function(err, files) {
     if (err) {
        console.log(err);
@@ -23,26 +58,63 @@ fs.readdir(dirname, function(err, files) {
            console.log("something is empty ;)");
        }else{
          console.log("something is not empty ;)");
+         for(var i=0; i < files.length; i++){
+           console.log(files[i]);
+         }
        }
     }
 });
 
+fs.exists(__dirname + '/users' + '/bobo', function(exists) {
+  console.log("exists answer : " + exists);
+});
+
+
+
 
 //storage engine
 const storage = multer.diskStorage({
-  destination: './public/uploads/',
+  destination: './public/uploads',
+  filename: function(req, file, cb){
+    cb(null, file.originalname + Date.now() + path.extname(file.originalname));
+  }
+});
+
+
+
+// init upload
+const upload = multer({
+  storage: storage
+}).single('myImage');
+
+const storage2 = multer.diskStorage({
+  destination: function (req, file, cb) {
+      let path = './users/' + 'harshv' + '/offerings/' + 'something' + "/" + file.fieldname;
+              if (!fs.existsSync(path)) {
+                  mkdirp.sync(path);
+                  console.log("a directory was made for you");
+              }
+               
+    cb(null, path);
+  } ,
   filename: function(req, file, cb){
     cb(null, file.originalname + Date.now() + path.extname(file.originalname));
   }
 });
 
 // init upload
-const upload = multer({
-  storage: storage,
-  fileFilter: function(req, file, cb){
-    checkFileType(file, cb);
-  }
-}).single('myImage');
+const upload2 = multer({
+  storage: storage2
+}).fields([{
+           name: 'hoho', maxCount: 4
+         }, {
+           name: 'uploads', maxCount: 5
+         }]);
+
+
+
+
+
 
 function checkFileType(file, cb){
   // allowed extens
@@ -60,15 +132,12 @@ app.get("/", function(req, res){
   res.render("uploadTest");
 });
 
-app.post("/upload", (req, res)=>{
-  upload(req, res, (err) =>{
-    if(err){
-      console.log(err);
-    }else{
-      res.send(req.file);
-    }
-  });
+app.post("/upload", upload2 ,(req, res)=>{
+
+   
+  res.send("hohahah");
 });
+
 
 
 

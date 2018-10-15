@@ -1,3 +1,4 @@
+// Configure a pool to get connections from.
 const { Pool, Client } = require('pg');
 const connectionString = 'postgresql://ubuntu:***REMOVED***@localhost:5432/dubswap';
 
@@ -10,12 +11,5 @@ pool.on('error', (err, client) => {
   process.exit(-1);
 });
 
-
-
-
-
+// export resources
 module.exports = pool;
-
-
-
-

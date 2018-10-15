@@ -1,0 +1,34 @@
+.column1{
+    float: left;
+    width: 33%;
+    padding:10px;
+    text-align: center;
+}
+
+.offering-image{
+    width:100%;
+}
+
+.card-text{
+    height:30%;
+    background-color: white;
+    border: 1px solid #d2daed;
+}
+
+.card-item{
+    padding:0.2rem;
+    height:33%;
+    padding-left:0.5rem;
+}
+
+.cart-button-container{
+    text-align: center;
+}
+
+h1{
+    text-align: center;
+}
+
+.b{
+    float: right;
+}
