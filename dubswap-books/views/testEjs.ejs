@@ -5,14 +5,11 @@
    
     <body>
         <button id = 'button'>click</button>
+        <img id="ItemPreview" src="" />
         
-        
-         <script>
-            var helloText = '<%= username %>';
-            var button = document.getElementById('button');
-            button.addEventListener('click', function(){
-                alert(helloText);
-            });
-        </script>
     </body>
+    
+    <script>
+        document.getElementById("ItemPreview").src = "data:image/png;base64," + "<%= imageBytes %>";
+    </script>
 </html>

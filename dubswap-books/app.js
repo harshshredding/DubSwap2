@@ -96,8 +96,10 @@ app.post("/register", function(req, res) {
             // If no one with the same username exists
             if (result.rowCount == 0) {
                 console.log("username : " + username);
-                pool.query("INSERT INTO users (username, password, type, first_name, last_name, email) values($1, $2, $3, $4, $5, $6)",
-                           [username, hash, 'false', firstName, lastName, email], function(err, result) {
+                var imageDirectory = __dirname + '/Images/default_profile_picture.jpg';
+                var defaultProfilePic = helper.getHexFromImage(imageDirectory, fs);
+                pool.query("INSERT INTO users (username, password, type, first_name, last_name, email, profile_picture) values($1, $2, $3, $4, $5, $6, $7)",
+                           [username, hash, 'false', firstName, lastName, email, defaultProfilePic], function(err, result) {
                     if (err) {
                         console.log(err);
                     } else {
@@ -231,7 +233,7 @@ app.post("/forgotPassword/requestChange/sendEmail", function(req, res) {
             if (results.rowCount == 0) {
                 res.render('passwordRequestChange', { doesntExist: true });
             } else {
-                var username = results.row[0].username;
+                var username = results.rows[0].username;
                 // nonce that will be used to make the verification link.
                 var nonce = helper.formatHash(bcrypt.genSaltSync(10));
                 emailer.sendEmail(nonce, email, username, 'forgotPassword/requestChange');
@@ -294,19 +296,36 @@ app.get("/logout", function(req, res) {
     res.redirect("/");
 });
 
+// Displays the profile of the logged in user. 
 app.get("/profile", isLoggedIn, function(req, res) {
-    res.render("profile", { username: req.user.username });
+    var username  = req.user.username;
+    pool.query("SELECT profile_picture from users where username = $1", [username],
+        function(err, result) {
+           if (err) {
+               console.log("There was an error while fetching the profile picture for"
+               + "user : " + req.user.username);
+               console.log(err);
+               res.render("profile", { username: username, profile_picture: "" });
+           } else {
+               var profile_picture = helper.convertHexToBase64(result.rows[0].profile_picture);
+               res.render("profile", { username: username, profile_picture: profile_picture });
+           }
+        });
 });
 
 app.get("/profile2", function(req, res) {
     res.render("profile", { username: 'harshv' });
 });
 
+var memoryStorage = multer.memoryStorage();
+var memoryUpload = multer({ storage: memoryStorage });
+
 let upload = multer({
     storage: multer.diskStorage({
         destination: (req, file, callback) => {
             console.log("holalal");
             let type = req.params.type;
+            console.log(file);
             let path = './users/' + req.user.username;
             if (!fs.existsSync(path)) {
                 fs.mkdirsSync(path);
@@ -327,7 +346,7 @@ const storage2 = multer.diskStorage({
             mkdirp.sync(path);
             console.log("a directory was made for you");
         }
-
+        
         cb(null, path);
     },
     filename: function(req, file, cb) {
@@ -388,8 +407,16 @@ let uploadOfferingDisplayImage = multer({
     })
 });
 
-app.post("/upload", [isLoggedIn, upload.array('myImage', 3)], (req, res) => {
-    res.send("hohoho you just uploaded something");
+app.post("/upload", [isLoggedIn, memoryUpload.array('myImage', 3)], (req, res) => {
+    var fileInHex = helper.getHexFromBuffer(req.files[0].buffer);
+    pool.query("insert into images values($1);", [fileInHex], function(err, result) {
+        if (err) {
+            console.log("There was some problem while uploading your image to the database in hex format.");
+            console.log(err);
+        } else {
+            console.log("Your image was successfully uploaded!");
+        }
+    });
 });
 
 // displays the details of a offering

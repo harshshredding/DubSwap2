@@ -92,7 +92,7 @@
 	<div class="row">
         <div class="profile-header-container">   
     		<div class="profile-header-img">
-                <img class="img-circle" src="//lh3.googleusercontent.com/-6V8xOA6M7BA/AAAAAAAAAAI/AAAAAAAAAAA/rzlHcD0KYwo/photo.jpg?sz=120" />
+                <img class="img-circle" id="profilePic" src=""/>
                 <!-- badge -->
                 <div class="rank-label-container">
                     <span class="label label-default rank-label" id="username"><%= username %></span>
@@ -112,9 +112,8 @@
         </form>
 </div>
 
-
-
-
-
+<script>
+document.getElementById("profilePic").src = "data:image/jpg;base64," + "<%= profile_picture %>";
+</script>
 
 <% include partials/footer %>
