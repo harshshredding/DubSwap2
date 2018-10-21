@@ -407,14 +407,19 @@ let uploadOfferingDisplayImage = multer({
     })
 });
 
-app.post("/upload", [isLoggedIn, memoryUpload.array('myImage', 3)], (req, res) => {
-    var fileInHex = helper.getHexFromBuffer(req.files[0].buffer);
-    pool.query("insert into images values($1);", [fileInHex], function(err, result) {
+// Uploads a new profile picture to the database, updating the user's profile.
+app.post("/uploadProfilePicture", [isLoggedIn, memoryUpload.single('myImage')], (req, res) => {
+    var fileInHex = helper.getHexFromBuffer(req.file.buffer);
+    var username = req.user.username;
+    pool.query("update users set profile_picture = $1 where username = $2;", [fileInHex, username], function(err, result) {
         if (err) {
-            console.log("There was some problem while uploading your image to the database in hex format.");
+            console.log("There was some problem while uploading your new"
+            + "dp to the database in hex format for user " + username);
             console.log(err);
+            res.send("There was a problem while uploading your profile picture");
         } else {
-            console.log("Your image was successfully uploaded!");
+            console.log("Profile picture was successfully updated!");
+            res.redirect("/profile");
         }
     });
 });
