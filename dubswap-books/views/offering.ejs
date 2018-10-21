@@ -84,7 +84,7 @@
 
 <h1><%- productName %></h1>
     <div class = "displayImage">
-        <img src="<%- imagePath %>">
+        <img src="" id="display_image">
     </div>
     <div>
         price : <%- price %>
@@ -96,5 +96,9 @@
     <div class="row1">
             <%- otherFilesHTML %>
     </div>
+    
+    <script>
+      <%- imagesScript %>
+    </script>
 
 <% include partials/footer %>

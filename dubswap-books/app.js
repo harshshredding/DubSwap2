@@ -424,59 +424,53 @@ app.post("/uploadProfilePicture", [isLoggedIn, memoryUpload.single('myImage')], 
     });
 });
 
-// displays the details of a offering
+// displays the details of an offering.
 app.get("/offering/:offeringID", function(req, response) {
     // get information about the offering with offering ID = offeringID
-    pool.query("select folder_id,description,item,price,user_id from offerings where offering_id = $1", [req.params.offeringID])
-        .then((res) => {
-            if (res.rowCount == 0) {
-                response.send("Offering doesn't exist");
-            }
-            else {
-                console.log(res.rows[0].user_id + "hohoho");
-                pool.query("select username from users where id=$1", [res.rows[0].user_id], function(err, result) {
-                    if (err) {
-                        console.lof(err);
-                    }
-                    else {
-                        var userName = result.rows[0].username;
-                        var dirname = __dirname + '/users/' + userName;
+    pool.query("select * from offerings INNER JOIN users ON (users.id = offerings.user_id) where offerings.offering_id = $1 ;", [req.params.offeringID])
+    .then((result) => {
+        if (result.rowCount == 0) {
+            response.send("Offering doesn't exist");
+        }
+        else {
+            var userName = result.rows[0].username;
+            var display_image = helper.convertHexToBase64(result.rows[0].image_1);
+            var other_image1 = helper.convertHexToBase64(result.rows[0].image_2);
+            var other_image2 = helper.convertHexToBase64(result.rows[0].image_3);
+            var other_image3 = helper.convertHexToBase64(result.rows[0].image_4);
+            var imagesScript = "";
+            var otherFilesHTML = "";
+            
+            // Create HTML for images
+            otherFilesHTML +=
+                "<div class='column1'>" +
+                "<img class='offering-image' src='' id='other_image1'>" +
+                "</div>"
+            imagesScript += "document.getElementById(\"other_image1\").src = \"data:image/jpg;base64,\" + \"" + other_image1 + "\";" ; 
+            otherFilesHTML +=
+                "<div class='column1'>" +
+                "<img class='offering-image' src='' id='other_image2'>" +
+                "</div>"
+            imagesScript += "document.getElementById(\"other_image2\").src = \"data:image/jpg;base64,\" + \"" + other_image2 + "\";" ;
+            otherFilesHTML +=
+                "<div class='column1'>" +
+                "<img class='offering-image' src='' id='other_image3'>" +
+                "</div>"
+            imagesScript += "document.getElementById(\"other_image3\").src = \"data:image/jpg;base64,\" + \"" + other_image3 + "\";" ;
+            
+            // Create HTML for the display image. 
+            imagesScript += "document.getElementById(\"display_image\").src = \"data:image/jpg;base64,\" + \"" + display_image + "\";" ;
 
-                        // get the list of file names
-                        var otherFiles;
-                        var dpFiles;
-                        try {
-
-                            dpFiles = fs.readdirSync(dirname + "/offerings/" + res.rows[0].folder_id + "/dp");
-                            otherFiles = fs.readdirSync(dirname + "/offerings/" + res.rows[0].folder_id + "/otherImages");
-
-                        }
-                        catch (err) { console.error('could not locate folder dp : ', err.stack) }
-
-                        var otherFilesHTML;
-                        for (var i = 0; i < otherFiles.length; i++) {
-                            otherFilesHTML +=
-                                "<div class='column1'>" +
-                                "<img class='offering-image' src='/users/" +
-                                userName + "/offerings/" + res.rows[0].folder_id + "/otherImages/" +
-                                otherFiles[i] + "'>" +
-                                "</div>"
-                        }
-                        var imageAddress = "/users/" + userName + "/offerings/" + res.rows[0].folder_id + "/dp/" + dpFiles[0];
-
-                        response.render("offering", {
-                            productName: res.rows[0].item,
-                            price: res.rows[0].price,
-                            description: res.rows[0].description,
-                            imagePath: imageAddress,
-                            otherFilesHTML: otherFilesHTML
-                        });
-
-                    }
-                });
-            }
-        })
-        .catch(err => console.error('Error executing query', err.stack));
+            response.render("offering", {
+                productName: result.rows[0].item,
+                price: result.rows[0].price,
+                description: result.rows[0].description,
+                imagesScript: imagesScript,
+                otherFilesHTML: otherFilesHTML
+            });
+        }
+    })
+    .catch(err => console.error('Error executing query', err.stack));
 });
 
 // Display the offerings page where all the offerings made by the user are
@@ -500,6 +494,8 @@ app.get("/offerings", isLoggedIn, (req, response) => {
                 var price = rowData.price;
                 var display_pic = helper.convertHexToBase64(rowData.image_1);
                 var offering_id = rowData.offering_id;
+                
+                // The structures that will contain the offering information. 
                 htmlResult += 
                        "<div class='column1'>" +
     
@@ -515,6 +511,8 @@ app.get("/offerings", isLoggedIn, (req, response) => {
                         +
                         "</div>"
                         ;
+                        
+                // This javascript will embed the pictures. 
                 imagesScript += "document.getElementById(\"offering"+ offering_id + "\").src = \"data:image/jpg;base64,\" + \"" + display_pic + "\";" ;
             }
             response.render("offerings", {threeImages: htmlResult, imagesScript: imagesScript});
