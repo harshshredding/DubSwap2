@@ -479,66 +479,45 @@ app.get("/offering/:offeringID", function(req, response) {
         .catch(err => console.error('Error executing query', err.stack));
 });
 
-// Display the offerings page where all the offerings made by the user are displayed in a
-// nice layout. 
+// Display the offerings page where all the offerings made by the user are
+// displayed in a nice layout.
 app.get("/offerings", isLoggedIn, (req, response) => {
-    var dirname = __dirname + '/users/' + req.user.username;
-    fs.readdir(dirname, function(err, files) {
+    var username = req.user.username;
+    pool.query("SELECT offerings.item, offerings.price, offerings.image_1, offerings.offering_id "
+    + "FROM users INNER JOIN offerings ON (users.id = offerings.user_id) WHERE "  
+    + "users.username = $1 ;", [username], function(err, result) {
         if (err) {
-            console.log("Error while reading user directory to find offerings");
+            console.log("There was some problem while fetching the offerings of "
+            + "user " + username);
             console.log(err);
-        }
-        else {
-            pool.query("select id from users where username=$1", [req.user.username])
-                // get user id and ask for folder names
-                .then((res) => {
-                    console.log(res.rows[0].id);
-                    return pool.query("select folder_id,item,price,offering_id" +
-                    + "from offerings where user_id = $1", [res.rows[0].id]);
-
-                })
-                // get photos inside the folder names and display them
-                .then((res) => {
-                    var result = "";
-                    console.log(res.rowCount);
-                    for (var i = 0; i < res.rowCount; i++) {
-                        // find the name of the file in dp
-                        try {
-
-                            var fileNames = fs.readdirSync(dirname + "/offerings/" + res.rows[i].folder_id + "/dp");
-                        }
-                        catch (err) { console.error('could not locate folder dp : ', err.stack) }
-
-                        console.log(fileNames[0]);
-
-                        // if no error occured while getting the file name
-                        if (fileNames.length != 0) {
-                            result +=
-
-                                "<div class='column1'>" +
-
-                                "<a href = 'offering/" + res.rows[i].offering_id + "'>" +
-                                "<img class='offering-image' src='/users/" +
-                                req.user.username + "/offerings/" + res.rows[i].folder_id + "/dp/" +
-                                fileNames[0] + "'>" + "</a>" +
-
-                                "<div class='d-flex flex-column card-text'>"
-
-                                +
-                                "<div class='card-item'>" + res.rows[i].price + "$</div>" +
-                                "<div class='card-item'>" + res.rows[i].item + "</div>" +
-                                "</div>"
-
-                                +
-                                "</div>"
-
-                                +
-                                "</div>";
-                        }
-                    }
-                    response.render("offerings", { threeImages: result });
-                })
-                .catch(err => console.error('Error executing query', err.stack));
+            response.send("Some problem occured while finding your offerings");
+        } else {
+            var htmlResult = "";
+            var imagesScript = "";
+            for (var i = 0; i < result.rowCount; i++) {
+                var rowData = result.rows[i];
+                var itemName = rowData.item;
+                var price = rowData.price;
+                var display_pic = helper.convertHexToBase64(rowData.image_1);
+                var offering_id = rowData.offering_id;
+                htmlResult += 
+                       "<div class='column1'>" +
+    
+                          "<a href = 'offering/" + offering_id + "'>"
+                            + "<img class='offering-image' src='' id='offering" + offering_id + "'>" + 
+                          "</a>" +
+    
+                        "<div class='d-flex flex-column card-text'>" + 
+                          "<div class='card-item'>" + price + "$</div>" +
+                          "<div class='card-item'>" + itemName + "</div>" +
+                        "</div>"
+    
+                        +
+                        "</div>"
+                        ;
+                imagesScript += "document.getElementById(\"offering"+ offering_id + "\").src = \"data:image/jpg;base64,\" + \"" + display_pic + "\";" ;
+            }
+            response.render("offerings", {threeImages: htmlResult, imagesScript: imagesScript});
         }
     });
 });
@@ -547,20 +526,48 @@ app.get("/addOffering", isLoggedIn, function(req, res) {
     res.render("addOffering");
 });
 
-app.post("/addOffering", [isLoggedIn, addTime, uploadOfferingImages], function(req, res) {
-    var item = req.body.itemName;
-    var itemType = req.body.itemType;
-    var itemModel = req.body.itemModel;
-    var price = parseInt(req.body.price, 10);
-
-    var description = req.body.description;
-    var date = new Date();
-
-    pool.query("INSERT INTO offerings(item, user_id, description, price, item_type, item_model_author, folder_id) values($1, $2, $3, $4, $5, $6, $7)", [item, req.user.id, description, price, itemType, itemModel, req.params.time])
-        .then((result) => {
-            // do something
-        }).catch(e => console.error(e.stack));
-    res.send("hola");
+// Adds the given offering to the market. 
+app.post("/addOffering", [isLoggedIn, addTime, 
+memoryUpload.fields(
+    [{
+        name: 'dp',
+        maxCount: 1
+    }, {
+        name: 'otherImages',
+        maxCount: 3
+    }]
+)], function(req, res) {
+        var item = req.body.itemName;
+        var itemType = req.body.itemType;
+        var itemModel = req.body.itemModel;
+        var price = parseInt(req.body.price, 10);
+        var description = req.body.description;
+        
+        var pic_1 = null; // This is the display picture
+        if (req.files['dp'].length == 1) {
+            pic_1 = helper.getHexFromBuffer(req.files['dp'][0].buffer);
+        } else {
+            res.send("wrong number of display images" + req.files['dp'].length);
+        }
+        var pic_2 = null;
+        var pic_3 = null;
+        var pic_4 = null;
+        if (req.files['otherImages'].length == 3) {
+            pic_2 = helper.getHexFromBuffer(req.files['otherImages'][0].buffer);
+            pic_3 = helper.getHexFromBuffer(req.files['otherImages'][1].buffer);
+            pic_4 = helper.getHexFromBuffer(req.files['otherImages'][2].buffer);
+        } else {
+            res.send("wrong number of other images " + req.files['otherImages'].length);
+        }
+    
+        pool.query("INSERT INTO offerings(item, user_id, description, price, item_type, item_model_author, image_1, image_2, image_3, image_4) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);", 
+        [item, req.user.id, description, price, itemType, itemModel, pic_1, pic_2, pic_3, pic_4])
+            .then((result) => {
+                res.send("hola ! Offering was successfully stored");
+            }).catch(e => {
+                console.error(e.stack);
+                res.send("Some error occured while uploading :( .");
+            });
 });
 
 // a middleware which checks whether a user is logged in
