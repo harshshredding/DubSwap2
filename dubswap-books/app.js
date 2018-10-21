@@ -45,7 +45,14 @@ app.locals = {
 
 
 
-
+pool.query("ALTER DATABASE dubswap SET TIME ZONE 'MST';", function(err, result) {
+   if (err) {
+       console.log(err);
+       throw new Error("Error while setting timezone of database.");
+   } else {
+       console.log("We set the timezone successfully!!");
+   }
+});
 
 
 
@@ -53,8 +60,54 @@ app.locals = {
 // All routes
 //***************************************
 
-app.get("/", isLoggedInHome, function(req, res) {
-    res.render("home", { username: req.user.username});
+// Prepares the homepage and renders it. 
+app.get("/", function(req, res) {
+    var offeringsHTML = "";
+    var imagesScript = "";
+    
+    // Get the details of the four most recent offerings from the database.
+    pool.query("SELECT item, image_1, price, offering_id from offerings ORDER BY time_stamp DESC limit 4;")
+    // prepare the HTML that will display the offerings
+    .then((result) => {
+        for (var i = 0; i < result.rows.length; i++) {
+                var price = result.rows[i].price;
+                var image = helper.convertHexToBase64(result.rows[i].image_1);
+                var item = result.rows[i].item;
+                var offering_id = result.rows[i].offering_id;
+                offeringsHTML += 
+                "<div class='product col-sm-3'>" + 
+                  "<a href = 'offering/" + offering_id + "'>" +
+                    "<img src = '' id='offering"+ i + "'>" + 
+                  "</a>" +
+                  "<div class='d-flex flex-column card-text'>" + 
+                    "<div class='card-item'>" + price + "</div>" + 
+                    "<div class='card-item'>"+ item +"</div>" + 
+                    "<div class='card-item cart-button-container'><button class='rounded'>add to cart</button></div>" + 
+                  "</div>" +          
+                "</div>"; 
+                
+                // create the script that will embed the corresponding image.
+                imagesScript += "document.getElementById(\"offering" + i + "\").src = \"data:image/jpg;base64,\" + \"" + image + "\";"
+        }
+        
+        // Render the page
+        console.log(req.isAuthenticated());
+        if (req.isAuthenticated()) {
+           res.render("home", {
+               username: req.user.username,
+               offeringsHTML: offeringsHTML,
+               imagesScript: imagesScript
+           });
+        } else {
+           res.render("home", {
+               username: null,
+               offeringsHTML: offeringsHTML,
+               imagesScript: imagesScript
+           }); 
+        }
+    })
+    .catch(e => console.error("error while getting information about the database" + 
+                     + e.stack));
 });
 
 app.get("/home", function(req, res) {
@@ -425,7 +478,7 @@ app.post("/uploadProfilePicture", [isLoggedIn, memoryUpload.single('myImage')], 
 });
 
 // displays the details of an offering.
-app.get("/offering/:offeringID", function(req, response) {
+app.get("/offering/:offeringID", isLoggedIn ,function(req, response) {
     // get information about the offering with offering ID = offeringID
     pool.query("select * from offerings INNER JOIN users ON (users.id = offerings.user_id) where offerings.offering_id = $1 ;", [req.params.offeringID])
     .then((result) => {
@@ -439,20 +492,20 @@ app.get("/offering/:offeringID", function(req, response) {
             var other_image2 = helper.convertHexToBase64(result.rows[0].image_3);
             var other_image3 = helper.convertHexToBase64(result.rows[0].image_4);
             var imagesScript = "";
-            var otherFilesHTML = "";
+            var otherImagesHTML = "";
             
             // Create HTML for images
-            otherFilesHTML +=
+            otherImagesHTML +=
                 "<div class='column1'>" +
                 "<img class='offering-image' src='' id='other_image1'>" +
                 "</div>"
             imagesScript += "document.getElementById(\"other_image1\").src = \"data:image/jpg;base64,\" + \"" + other_image1 + "\";" ; 
-            otherFilesHTML +=
+            otherImagesHTML +=
                 "<div class='column1'>" +
                 "<img class='offering-image' src='' id='other_image2'>" +
                 "</div>"
             imagesScript += "document.getElementById(\"other_image2\").src = \"data:image/jpg;base64,\" + \"" + other_image2 + "\";" ;
-            otherFilesHTML +=
+            otherImagesHTML +=
                 "<div class='column1'>" +
                 "<img class='offering-image' src='' id='other_image3'>" +
                 "</div>"
@@ -462,11 +515,12 @@ app.get("/offering/:offeringID", function(req, response) {
             imagesScript += "document.getElementById(\"display_image\").src = \"data:image/jpg;base64,\" + \"" + display_image + "\";" ;
 
             response.render("offering", {
+                username: req.user.username,
                 productName: result.rows[0].item,
                 price: result.rows[0].price,
                 description: result.rows[0].description,
                 imagesScript: imagesScript,
-                otherFilesHTML: otherFilesHTML
+                otherImagesHTML: otherImagesHTML
             });
         }
     })
@@ -515,7 +569,8 @@ app.get("/offerings", isLoggedIn, (req, response) => {
                 // This javascript will embed the pictures. 
                 imagesScript += "document.getElementById(\"offering"+ offering_id + "\").src = \"data:image/jpg;base64,\" + \"" + display_pic + "\";" ;
             }
-            response.render("offerings", {threeImages: htmlResult, imagesScript: imagesScript});
+            response.render("offerings", {threeImages: htmlResult,
+            imagesScript: imagesScript, username: req.user.username});
         }
     });
 });
@@ -584,12 +639,10 @@ function addTime(req, res, next) {
 }
 
 function isLoggedInHome(req, res, next) {
-    if (req.isAuthenticated()) {
-        console.log(req.user.username);
-        return next();
+    if (!req.isAuthenticated()) {
+        req.user.username = null;
     }
-    console.log(req.url);
-    return res.render("home");
+    return next();
 }
 
 // Boiler plate again, 
