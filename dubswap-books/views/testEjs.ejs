@@ -4,12 +4,25 @@
     </head>
    
     <body>
-        <button id = 'button'>click</button>
+        <button id ='submit-button'>click</button>
         <img id="ItemPreview" src="" />
         
     </body>
     
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
     <script>
-        document.getElementById("ItemPreview").src = "data:image/png;base64," + "<%= imageBytes %>";
+        $('#submit-button').click(function() {
+            $.ajax({
+                url: '/offering-interests/1',
+                type: 'POST',
+                data: {
+                    email: 'email@example.com',
+                    message: 'hello world!'
+                },
+                success: function(msg) {
+                    alert('Email Sent');
+                }               
+            });
+        });
     </script>
 </html>

@@ -155,3 +155,7 @@ app.post("/upload", upload2 ,(req, res)=>{
 app.listen(process.env.PORT, process.env.IP, function(){
    console.log("The server has started my dear hoho"); 
 });
+
+app.post("/offering-interests/1", function(req, res) {
+   console.log("You have reached me !!!");
+});

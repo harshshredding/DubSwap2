@@ -62,52 +62,97 @@ pool.query("ALTER DATABASE dubswap SET TIME ZONE 'MST';", function(err, result) 
 
 // Prepares the homepage and renders it. 
 app.get("/", function(req, res) {
+    var username = null;
+    if (req.isAuthenticated()) {
+        username = req.user.username;
+    }
     var offeringsHTML = "";
     var imagesScript = "";
-    
-    // Get the details of the four most recent offerings from the database.
-    pool.query("SELECT item, image_1, price, offering_id from offerings ORDER BY time_stamp DESC limit 4;")
-    // prepare the HTML that will display the offerings
-    .then((result) => {
-        for (var i = 0; i < result.rows.length; i++) {
-                var price = result.rows[i].price;
-                var image = helper.convertHexToBase64(result.rows[i].image_1);
-                var item = result.rows[i].item;
-                var offering_id = result.rows[i].offering_id;
-                offeringsHTML += 
-                "<div class='product col-sm-3'>" + 
-                  "<a href = 'offering/" + offering_id + "'>" +
-                    "<img src = '' id='offering"+ i + "'>" + 
-                  "</a>" +
-                  "<div class='d-flex flex-column card-text'>" + 
-                    "<div class='card-item'>" + price + "</div>" + 
-                    "<div class='card-item'>"+ item +"</div>" + 
-                    "<div class='card-item cart-button-container'><button class='rounded'>add to cart</button></div>" + 
-                  "</div>" +          
-                "</div>"; 
-                
-                // create the script that will embed the corresponding image.
-                imagesScript += "document.getElementById(\"offering" + i + "\").src = \"data:image/jpg;base64,\" + \"" + image + "\";"
-        }
-        
-        // Render the page
-        console.log(req.isAuthenticated());
-        if (req.isAuthenticated()) {
-           res.render("home", {
-               username: req.user.username,
-               offeringsHTML: offeringsHTML,
-               imagesScript: imagesScript
-           });
+    var interestButtonScript = "";
+    var user_id = null;
+
+    // Get the user-id of the current user. 
+    pool.query("SELECT id from users where username=$1;", [username])
+        .then((result) => {
+            // If we are logged in ! 
+            if (result.rows.length > 0) {
+                user_id = result.rows[0].id;
+            }
+            // Get the details of the four most recent offerings from the database.
+            pool.query("SELECT item, image_1, price, offering_id from offerings ORDER BY time_stamp DESC limit 4;", function(err, result) {
+                if (err) {
+                    console.log(err);
+                }
+                else {
+                    for (var i = 0; i < result.rows.length; i++) {
+                        var price = result.rows[i].price;
+                        var image = helper.convertHexToBase64(result.rows[i].image_1);
+                        var item = result.rows[i].item;
+                        var offering_id = result.rows[i].offering_id;
+                        offeringsHTML +=
+                            "<div class='product col-sm-3'>" +
+                            "<a href = 'offering/" + offering_id + "'>" +
+                            "<img src = '' id='offering" + i + "'>" +
+                            "</a>" +
+                            "<div class='d-flex flex-column card-text'>" +
+                            "<div class='card-item'>" + price + "</div>" +
+                            "<div class='card-item'>" + item + "</div>" +
+                            "<div class='card-item cart-button-container'><button class='rounded' id='interestButton" + offering_id + "'>Interested</button></div>" +
+                            "</div>" +
+                            "</div>";
+
+                        // create the script that will embed the corresponding image.
+                        imagesScript += "document.getElementById(\"offering" + i + "\").src = \"data:image/jpg;base64,\" + \"" + image + "\";";
+                        interestButtonScript +=
+                            "$('#interestButton" + offering_id + "').click(function() {" +
+                            "$.ajax({" +
+                            "url: '/offering-interests'," +
+                            "type: 'POST'," +
+                            "data: {" +
+                            "offering_id: '" + offering_id + "'," +
+                            "user_id: '" + user_id + "'" +
+                            "}," +
+                            "success: function(msg) {" +
+                            "alert('Email Sent');" +
+                            "}" +
+                            "});" +
+                            "});";
+                    }
+
+                    // Render the page
+                    if (req.isAuthenticated()) {
+                        res.render("home", {
+                            username: req.user.username,
+                            offeringsHTML: offeringsHTML,
+                            imagesScript: imagesScript,
+                            interestButtonScript: interestButtonScript
+                        });
+                    }
+                    else {
+                        res.render("home", {
+                            username: null,
+                            offeringsHTML: offeringsHTML,
+                            imagesScript: imagesScript,
+                            interestButtonScript: interestButtonScript
+                        });
+                    }
+                }
+            });
+        });
+});
+
+app.post("/offering-interests", function(req, res) {
+    var offering_id = req.body.offering_id;
+    var user_id = req.body.user_id;
+    pool.query("INSERT INTO offering_interests(offering_id, user_id) VALUES($1, $2);", [offering_id, user_id], function(err, result) {
+        if (err) {
+            console.log("There was an error while storing an interest of user " + user_id);
+            console.log(err);
         } else {
-           res.render("home", {
-               username: null,
-               offeringsHTML: offeringsHTML,
-               imagesScript: imagesScript
-           }); 
+            console.log("The interest was succesfully stored.");
         }
-    })
-    .catch(e => console.error("error while getting information about the database" + 
-                     + e.stack));
+    });
+    console.log("You have reached me !!!");
 });
 
 app.get("/home", function(req, res) {
@@ -635,13 +680,6 @@ function addTime(req, res, next) {
     var date = new Date();
     var time = date.getTime();
     req.params.time = time;
-    return next();
-}
-
-function isLoggedInHome(req, res, next) {
-    if (!req.isAuthenticated()) {
-        req.user.username = null;
-    }
     return next();
 }
 
