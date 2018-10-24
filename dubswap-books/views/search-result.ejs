@@ -76,33 +76,22 @@
         </div>
       </nav>
       
-      
 <link rel="stylesheet" href="/stylesheets/global.css">
-<link rel="stylesheet" href="/stylesheets/offering.css">
-
-
-
-<h1><%- productName %></h1>
-    <div class = "displayImage">
-        <img src="" id="display_image">
-    </div>
-    <div>
-        price : <%- price %>
-    </div>
-    <div>
-        description : <%- description%>
-    </div>
-    
-    <div>
-        Number of interested people : <%- numberOfInterestedPeople %>
-    </div>
-    
-    <div class="row1">
-            <%- otherImagesHTML %>
-    </div>
-    
-    <script>
-      <%- imagesScript %>
-    </script>
+<link rel="stylesheet" href="/stylesheets/offerings.css">
+                <h1 class="headingDiv"> 
+                    <span class="a">Search Results</span>
+                </h1>
+                
+                <h3>
+                    <% if (hasNoResults){ %>
+                        No result :( 
+                    <% }%>
+                </h3>
+                <div class="row1">
+                  <%- allResults %>
+                </div>
+<script>
+  <%- imagesScript %>
+</script>
 
 <% include partials/footer %>

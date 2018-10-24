@@ -14,6 +14,8 @@ var multer = require('multer');
 var path = require('path');
 var fs = require('fs');
 var mkdirp = require('mkdirp');
+var elasticClient = require("./elasticsearch/connection.js");
+
 
 
 app.use(session({
@@ -54,11 +56,112 @@ pool.query("ALTER DATABASE dubswap SET TIME ZONE 'MST';", function(err, result) 
    }
 });
 
-
+// Check whether the 'offerings' index exists in elasticsearch.
+// The 'offerings' index is essential for the search bar.
+elasticClient.indices.exists({index : "offerings"}, function (err, res, status){
+    if (err) {
+         throw new Error("Error while setting timezone of database." + err);
+    } else {
+        // If the index does not exists
+        if (res != true) {
+            throw new Error("The offerings index does not exist :(." +
+            "We have to stop the service.");
+        }
+    }
+});
 
 
 // All routes
 //***************************************
+
+// A route that handles the search queries
+app.get("/search", function(req, responseHTTP) {
+    var query = req.query.query;
+    elasticClient.search({
+        index: 'offerings',
+        type: 'offering',
+        body: {
+            "query": {
+                "multi_match": {
+                    "query": query,
+                    "fields": ["description", "item"]
+                }
+            }
+        }
+    }, function(error, response, status) {
+        if (error) {
+            console.log("error while executing elasticsearch query" + error);
+        }
+        else {
+            console.log("--- Response ---");
+            console.log(response);
+            console.log("--- Hits ---");
+            // We maintain a list of results
+            var offeringIdList = [];
+
+            response.hits.hits.forEach(function(hit) {
+                offeringIdList.push(hit._id);
+            });
+            
+            if (offeringIdList === undefined || offeringIdList.length == 0) {
+                // array empty or does not exist
+                responseHTTP.render("search-result", {
+                        allResults: "",
+                        imagesScript: "",
+                        username: null, 
+                        hasNoResults: true
+                });
+                return ;
+            }
+            
+            // We find all the offering records corresponding to the search results.
+            pool.query("SELECT * FROM offerings WHERE offering_id IN (" + offeringIdList.join(',') + ");", function(err, result) {
+                if (err) {
+                    console.log("There was a problem while querying the database for search offering-ids.");
+                    console.log(err);
+                }
+                else {
+                    var htmlResult = "";
+                    var imagesScript = "";
+                    for (var i = 0; i < result.rowCount; i++) {
+                        var rowData = result.rows[i];
+                        var itemName = rowData.item;
+                        var price = rowData.price;
+                        var display_pic = helper.convertHexToBase64(rowData.image_1);
+                        var offering_id = rowData.offering_id;
+
+                        // The structures that will contain the offering information. 
+                        htmlResult +=
+                            "<div class='column1'>" +
+
+                            "<a href = 'offering/" + offering_id + "'>" +
+                            "<img class='offering-image' src='' id='offering" + offering_id + "'>" +
+                            "</a>" +
+
+                            "<div class='d-flex flex-column card-text'>" +
+                            "<div class='card-item'>" + price + "$</div>" +
+                            "<div class='card-item'>" + itemName + "</div>" +
+                            "</div>"
+
+                            +
+                            "</div>";
+
+                        // This javascript will embed the pictures. 
+                        imagesScript += "document.getElementById(\"offering" + offering_id + "\").src = \"data:image/jpg;base64,\" + \"" + display_pic + "\";";
+                    }
+                    
+                    // Render Search Results HTML.
+                    responseHTTP.render("search-result", {
+                        allResults: htmlResult,
+                        imagesScript: imagesScript,
+                        username: null,
+                        hasNoResults: false
+                    });
+                }
+            });
+        }
+    });
+});
 
 // Prepares the homepage and renders it. 
 app.get("/", function(req, res) {
@@ -101,8 +204,9 @@ app.get("/", function(req, res) {
                             "</div>" +
                             "</div>";
 
-                        // create the script that will embed the corresponding image.
+                        // Create the script that will embed the corresponding image.
                         imagesScript += "document.getElementById(\"offering" + i + "\").src = \"data:image/jpg;base64,\" + \"" + image + "\";";
+                        // Creates scripts that give functionality to the offering-interest button.
                         interestButtonScript +=
                             "$('#interestButton" + offering_id + "').click(function() {" +
                             "$.ajax({" +
@@ -205,21 +309,6 @@ app.post("/register", function(req, res) {
                     }
                 });
                 
-                fs.exists(__dirname + '/users' + "/" + username, function(exists) {
-                    if (!exists) {
-                        fs.mkdir("users/" + username, function(err) {
-                            if (err) {
-                                console.log("error while making directory : " + err);
-                            }
-                            else {
-                                console.log("some folder was created, check it out");
-                            }
-                        });
-                    } else {
-                        console.log("no need to make directory");
-                    }
-                });
-                
                 pool.query("INSERT INTO verificationtable values($1, $2)", [username, modifiedSalt], function(err, result) {
                     if (err) {
                         console.log(err);
@@ -300,7 +389,7 @@ app.post("/forgotPassword/requestChange/:oldHash/:username", function(req, res) 
                     }
                 });
             } else {
-                res.send("There was some problem in verifying your identity.")
+                res.send("There was some problem in verifying your identity.");
             }
             // Delete the entry in table passwordchangeverification as it is
             // no longer needed. Deletion also prevents malicious users to
@@ -308,7 +397,7 @@ app.post("/forgotPassword/requestChange/:oldHash/:username", function(req, res) 
             pool.query("delete from passwordchangeverification where username=$1", [username], function(err, result) {
                             if (err) {
                                 console.log("problem while deleting entry in"
-                                + " passwordchangeverification.")
+                                + " passwordchangeverification.");
                                 console.log(err);
                             } else {
                                 console.log('stuff deleted');
@@ -536,6 +625,9 @@ app.get("/offering/:offeringID", isLoggedIn ,function(req, response) {
             var other_image1 = helper.convertHexToBase64(result.rows[0].image_2);
             var other_image2 = helper.convertHexToBase64(result.rows[0].image_3);
             var other_image3 = helper.convertHexToBase64(result.rows[0].image_4);
+            var productName = result.rows[0].item;
+            var price = result.rows[0].price;
+            var description = result.rows[0].description;
             var imagesScript = "";
             var otherImagesHTML = "";
             
@@ -558,15 +650,29 @@ app.get("/offering/:offeringID", isLoggedIn ,function(req, response) {
             
             // Create HTML for the display image. 
             imagesScript += "document.getElementById(\"display_image\").src = \"data:image/jpg;base64,\" + \"" + display_image + "\";" ;
-
-            response.render("offering", {
-                username: req.user.username,
-                productName: result.rows[0].item,
-                price: result.rows[0].price,
-                description: result.rows[0].description,
-                imagesScript: imagesScript,
-                otherImagesHTML: otherImagesHTML
-            });
+            
+            // Query for the number of likes this offering has received
+            pool.query("SELECT COUNT(*) FROM offering_interests WHERE offering_id=$1;", [req.params.offeringID],
+                function(err, result) {
+                     if (err) {
+                         console.log("There was an error while finding the" +
+                         "number of intersts for offering with" + 
+                         "offering_id : " + req.params.offeringID );
+                         console.log(err);
+                     } else {
+                         var numberOfInterestedPeople = result.rows[0].count;
+                         response.render("offering", {
+                           username: req.user.username,
+                           productName: productName,
+                           price: price,
+                           description: description,
+                           imagesScript: imagesScript,
+                           otherImagesHTML: otherImagesHTML, 
+                           numberOfInterestedPeople: numberOfInterestedPeople
+                         });
+                     } 
+                }
+            );
         }
     })
     .catch(err => console.error('Error executing query', err.stack));
@@ -641,6 +747,7 @@ memoryUpload.fields(
         var price = parseInt(req.body.price, 10);
         var description = req.body.description;
         
+        
         var pic_1 = null; // This is the display picture
         if (req.files['dp'].length == 1) {
             pic_1 = helper.getHexFromBuffer(req.files['dp'][0].buffer);
@@ -658,14 +765,34 @@ memoryUpload.fields(
             res.send("wrong number of other images " + req.files['otherImages'].length);
         }
     
-        pool.query("INSERT INTO offerings(item, user_id, description, price, item_type, item_model_author, image_1, image_2, image_3, image_4) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);", 
-        [item, req.user.id, description, price, itemType, itemModel, pic_1, pic_2, pic_3, pic_4])
-            .then((result) => {
+        pool.query("INSERT INTO offerings(item, user_id, description, price, item_type, item_model_author, image_1, image_2, image_3, image_4) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING offering_id;", [item, req.user.id, description, price, itemType, itemModel, pic_1, pic_2, pic_3, pic_4], 
+        function(err, result) {
+            if (err) {
+                console.log("There was some error while uploading the offering.");
+                console.log(err);
+            } else {
+                var offering_id = result.rows[0].offering_id;
+                // Add the offering to elastic search
+                elasticClient.index({
+                    index: 'offerings',
+                    type: 'offering',
+                    id: '' + offering_id,
+                    body: {
+                        "item": item,
+                        "description": description,
+                    }
+                }, function(err, resp, status) {
+                    if (err) {
+                        console.log("There was an error while adding offering_id ("+ offering_id + ") to elastic search.");
+                        console.log(err);
+                    }
+                    else {
+                        console.log(resp);
+                    }
+                });
                 res.send("hola ! Offering was successfully stored");
-            }).catch(e => {
-                console.error(e.stack);
-                res.send("Some error occured while uploading :( .");
-            });
+            }
+        });
 });
 
 // a middleware which checks whether a user is logged in

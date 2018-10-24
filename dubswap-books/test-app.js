@@ -1,5 +1,7 @@
 // random file to test stuff
-
+var list = [];
+list.push('3', '4');
+console.log(list.join(','));
 var express = require("express");
 var multer = require('multer');
 var ejs = require('ejs');
@@ -25,16 +27,14 @@ console.log(dirname);
 var image_location  = __dirname + "/hopper.png";
 var imgData;
 
-
-imgData = helper.getHexFromImage(image_location, fs);
-pool.query("insert into images values($1);", [imgData], function(err, result) {
-    if(err) {
-        console.log("There was an error while inserting the image into the database");
+pool.query("insert into lala values(2) returning id;", function(err, result) {
+    if (err) {
+        console.log("There was an error while inserting values in lala");
         console.log(err);
     } else {
-        console.log("The image was written successfully.");
+        console.log(result);
     }
-});
+})
 
 app.get('/showImage', function(req, res, next) {
   pool.query('select image from images limit 1',
