@@ -35,16 +35,34 @@
               </div>
             </li>
             <li class="nav-item">
-              <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
-            </li>
-            <li class="nav-item" id="profile-stuff">
-              <span id="username-nav"></span>
-              <img id="profile-image">
+              <form class="form-inline" action="/search" method="GET">
+                <input name="query" class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+                <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+              </form>
             </li>
           </ul>
+          
+          <div></div>
           <form class="form-inline my-2 my-lg-0">
-            <a href="/login" class="btn btn-outline-success my-2 my-sm-0" id="sign-in-button" type="submit">Sign In</a>
-            <a href="/register" class="btn btn-outline-success my-2 my-sm-0" id="sign-up-button" type="submit">Sign Up</a>
+           <% if(username != null){ %>
+            
+            
+            <a href="/offerings" class="btn btn-outline-success my-2 my-sm-0" id="sign-in-button" type="submit">My Offerings</a>
+            <a href="#" class="btn btn-outline-success my-2 my-sm-0" id="sign-up-button" type="submit">My Transactions</a>
+            <a href="\profile" id="menu-id-div"><%= username %></a>
+            <div class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                
+              </a>
+              <div class="dropdown-menu dropdown-pull-right" aria-labelledby="navbarDropdown">
+                <a class="dropdown-item" href="#">settings</a>
+                <a class="dropdown-item" href="/logout">logout</a>
+              </div>
+            </div>
+            <% }else{ %>
+                <a href="/login" class="btn btn-outline-success my-2 my-sm-0" id="sign-in-button" type="submit">Sign In</a>
+                <a href="/register" class="btn btn-outline-success my-2 my-sm-0" id="sign-up-button" type="submit">Sign Up</a>
+            <% } %>
           </form>
           
         </div>

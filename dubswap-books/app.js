@@ -317,7 +317,7 @@ app.post("/register", function(req, res) {
                     }
                 });
                 emailer.sendEmail(modifiedSalt, email, username,'verification');
-                res.redirect('/verification-sendEmail/' + username);
+                res.render('emailSent', {email : email, username : null});
             } else {
                 res.render('register', { alreadyExists: true });
             }
@@ -346,7 +346,7 @@ app.get("/forgotPassword/requestChange/:nonce/:username", function(req, res) {
         } else {
             // If we find that the corresponding entry exists
             if (result != null && result.rowCount > 0) {
-                res.render('enterNewPassword', {oldHash: nonce, username: username});
+                res.render('enterNewPassword', {oldHash: nonce, username: null});
             } else {
                 res.send('There was a problem verifying your identity, please try again');
                 // Deletion prevents malicious users to
@@ -458,7 +458,7 @@ app.get("/verification/:hash/:username", function(req, res) {
                         console.log(err);
                     }
                 });
-                res.render('verified', { username: name });
+                res.render('verified', { username: null });
             } else {
                 res.send('There was a problem verifying your identity, please try again');
             }
