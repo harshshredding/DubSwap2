@@ -328,7 +328,7 @@ app.post("/register", function(req, res) {
 
 // renders the login form
 app.get("/login", function(req, res) {
-    res.render("login", { username: 'harshv' });
+    res.render("login", { username: null });
 });
 
 app.get("/forgotPassword/requestChange", function(req, res) {
@@ -737,8 +737,14 @@ memoryUpload.fields(
         name: 'dp',
         maxCount: 1
     }, {
-        name: 'otherImages',
-        maxCount: 3
+        name: 'img1',
+        maxCount: 1
+    }, {
+        name: 'img2',
+        maxCount: 1
+    }, {
+        name: 'img3',
+        maxCount: 1
     }]
 )], function(req, res) {
         var item = req.body.itemName;
@@ -747,23 +753,31 @@ memoryUpload.fields(
         var price = parseInt(req.body.price, 10);
         var description = req.body.description;
         
-        
         var pic_1 = null; // This is the display picture
-        if (req.files['dp'].length == 1) {
+        var pic_2 = null; // This is the second image
+        var pic_3 = null; // this is the third image
+        var pic_4 = null; // this is the fourth image
+        if (req.files['dp'].length == 1 && req.files['img1'].length == 1
+        && req.files['img2'].length == 1 && req.files['img3'].length == 1) {
             pic_1 = helper.getHexFromBuffer(req.files['dp'][0].buffer);
+            pic_2 = helper.getHexFromBuffer(req.files['img1'][0].buffer);
+            pic_3 = helper.getHexFromBuffer(req.files['img2'][0].buffer);
+            pic_4 = helper.getHexFromBuffer(req.files['img3'][0].buffer);
         } else {
-            res.send("wrong number of display images" + req.files['dp'].length);
+            res.send("Make sure you uploaded one of each 4 images");
+            return;
         }
-        var pic_2 = null;
-        var pic_3 = null;
-        var pic_4 = null;
-        if (req.files['otherImages'].length == 3) {
-            pic_2 = helper.getHexFromBuffer(req.files['otherImages'][0].buffer);
-            pic_3 = helper.getHexFromBuffer(req.files['otherImages'][1].buffer);
-            pic_4 = helper.getHexFromBuffer(req.files['otherImages'][2].buffer);
-        } else {
-            res.send("wrong number of other images " + req.files['otherImages'].length);
-        }
+        
+
+        // if (req.files['otherImages'].length == 3) {
+        //     pic_2 = helper.getHexFromBuffer(req.files['otherImages'][0].buffer);
+        //     pic_3 = helper.getHexFromBuffer(req.files['otherImages'][1].buffer);
+        //     pic_4 = helper.getHexFromBuffer(req.files['otherImages'][2].buffer);
+        // } else {
+        //     res.send("The should upload exactly 3 images other than the" +
+        //       "display pic. You tried to upload " + req.files['otherImages'].length + " images.");
+        //     return;
+        // }
     
         pool.query("INSERT INTO offerings(item, user_id, description, price, item_type, item_model_author, image_1, image_2, image_3, image_4) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING offering_id;", [item, req.user.id, description, price, itemType, itemModel, pic_1, pic_2, pic_3, pic_4], 
         function(err, result) {

@@ -23,68 +23,129 @@
       <textarea class="form-control" rows="5" id="comment" name="description" placeholder=""></textarea><br><br>
       
       <label for="displayPicture"><b>Upload Display Picture</b></label>
-      <input type='file' name='dp' onchange="readURL(this);"/>
+      <input type='file' name='dp' onchange="readUrlDp(this);"/>
       <div>
-      <img id="blah" src="#" alt="your image" />
+      <img id="div-dp" src="#" alt="your image" />
       </div>
       
-       <label for="threePictures"><b>3 More pictures</b></label>
-       <input type='file' name='otherImages' onchange="previewFiles();" id="files" multiple/>
-       <div id="preview">
-         
-       </div>
+      <label for="displayPicture"><b>Image Angle 1</b></label>
+      <input type='file' name='img1' onchange="readUrlImg1(this);"/>
+      <div>
+      <img id="div-img1" src="#" alt="your image" />
+      </div>
       
+      <label for="displayPicture"><b>Image Angle 2</b></label>
+      <input type='file' name='img2' onchange="readUrlImg2(this);"/>
+      <div>
+      <img id="div-img2" src="#" alt="your image" />
+      </div>
+      
+      <label for="displayPicture"><b>Image Angle 3</b></label>
+      <input type='file' name='img3' onchange="readUrlImg3(this);"/>
+      <div>
+      <img id="div-img3" src="#" alt="your image" />
+      </div>
+      
+       <!--<label for="threePictures"><b>3 More pictures</b></label>-->
+       <!--<input type='file' name='otherImages' onchange="previewFiles();" id="files" multiple/>-->
+       <!--<div id="preview">-->
+       <!--</div>-->
+      <div class="container">
       <button class="btn btn-primary" id="submit-button">Submit</button>
+      </div>
+      
       </form>
       
       <script>
-        function readURL(input) {
+      
+      function readUrlDp(input) {
         if (input.files && input.files[0]) {
             var reader = new FileReader();
-
+            
             reader.onload = function (e) {
-                $('#blah')
+                $('#div-dp')
                     .attr('src', e.target.result)
                     .width('50%')
             };
 
             reader.readAsDataURL(input.files[0]);
-           }
-       }
-       
-       function previewFiles() {
+          }
+      }
+      
+     function readUrlImg1(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            
+            reader.onload = function (e) {
+                $('#div-img1')
+                    .attr('src', e.target.result)
+                    .width('50%')
+            };
 
-            var preview = document.querySelector('#preview');
-            var files   = document.querySelector('#files').files;
-          
-            function readAndPreview(file) {
-          
-              // Make sure `file.name` matches our extensions criteria
-              
-                var reader = new FileReader();
-          
-                reader.addEventListener("load", function () {
-                  var image = new Image();
-                  
-                  image.title = file.name;
-                  image.src = this.result;
-                  
-                  image.style.width = "33%";
-                  image.style.padding = "10px";
-                  
-                  preview.appendChild( image );
-                }, false);
-          
-                reader.readAsDataURL(file);
-              
-          
-            }
-          
-            if (files) {
-              [].forEach.call(files, readAndPreview);
-            }
+            reader.readAsDataURL(input.files[0]);
+          }
+      }
+      
+      function readUrlImg2(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            
+            reader.onload = function (e) {
+                $('#div-img2')
+                    .attr('src', e.target.result)
+                    .width('50%')
+            };
 
-        }
+            reader.readAsDataURL(input.files[0]);
+          }
+      }
+      
+      function readUrlImg3(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            
+            reader.onload = function (e) {
+                $('#div-img3')
+                    .attr('src', e.target.result)
+                    .width('50%')
+            };
+
+            reader.readAsDataURL(input.files[0]);
+          }
+      }
+      
+      // function previewFiles() {
+
+      //       var preview = document.querySelector('#preview');
+      //       var files   = document.querySelector('#files').files;
+      //       console.log(files.length);
+          
+      //       function readAndPreview(file) {
+          
+      //         // Make sure `file.name` matches our extensions criteria
+              
+      //           var reader = new FileReader();
+          
+      //           reader.addEventListener("load", function () {
+      //             var image = new Image();
+                  
+      //             image.title = file.name;
+      //             image.src = this.result;
+                  
+      //             image.style.width = "33%";
+      //             image.style.padding = "10px";
+                  
+      //             preview.appendChild( image );
+      //           }, false);
+          
+      //           reader.readAsDataURL(file);
+      //       }
+          
+      //       if (files) {
+      //         [].forEach.call(files, readAndPreview);
+      //       }
+
+      //   }
       </script>
   
 </div>
