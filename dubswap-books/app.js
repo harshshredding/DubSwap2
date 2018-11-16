@@ -44,9 +44,8 @@ app.locals = {
     username: null
 }
 
-
-
-
+// Set the timezone of the database to MST because most of the users will be
+// in Seattle.
 pool.query("ALTER DATABASE dubswap SET TIME ZONE 'MST';", function(err, result) {
    if (err) {
        console.log(err);
@@ -75,96 +74,99 @@ elasticClient.indices.exists({index : "offerings"}, function (err, res, status){
 //***************************************
 
 // A route that handles the search queries
-app.get("/search", function(req, responseHTTP) {
+app.get("/search", async function(req, responseHTTP, next) {
     var query = req.query.query;
-    elasticClient.search({
-        index: 'offerings',
-        type: 'offering',
-        body: {
-            "query": {
-                "multi_match": {
-                    "query": query,
-                    "fields": ["description", "item"]
-                }
-            }
-        }
-    }, function(error, response, status) {
-        if (error) {
-            console.log("error while executing elasticsearch query" + error);
-        }
-        else {
-            console.log("--- Response ---");
-            console.log(response);
-            console.log("--- Hits ---");
-            // We maintain a list of results
-            var offeringIdList = [];
-
-            response.hits.hits.forEach(function(hit) {
-                offeringIdList.push(hit._id);
-            });
-            
-            if (offeringIdList === undefined || offeringIdList.length == 0) {
-                // array empty or does not exist
-                responseHTTP.render("search-result", {
-                        allResults: "",
-                        imagesScript: "",
-                        username: null, 
-                        hasNoResults: true
-                });
-                return ;
-            }
-            
-            // We find all the offering records corresponding to the search results.
-            pool.query("SELECT * FROM offerings WHERE offering_id IN (" + offeringIdList.join(',') + ");", function(err, result) {
-                if (err) {
-                    console.log("There was a problem while querying the database for search offering-ids.");
-                    console.log(err);
-                }
-                else {
-                    var htmlResult = "";
-                    var imagesScript = "";
-                    for (var i = 0; i < result.rowCount; i++) {
-                        var rowData = result.rows[i];
-                        var itemName = rowData.item;
-                        var price = rowData.price;
-                        var display_pic = helper.convertHexToBase64(rowData.image_1);
-                        var offering_id = rowData.offering_id;
-
-                        // The structures that will contain the offering information. 
-                        htmlResult +=
-                            "<div class='column1'>" +
-
-                            "<a href = 'offering/" + offering_id + "'>" +
-                            "<img class='offering-image' src='' id='offering" + offering_id + "'>" +
-                            "</a>" +
-
-                            "<div class='d-flex flex-column card-text'>" +
-                            "<div class='card-item'>" + price + "$</div>" +
-                            "<div class='card-item'>" + itemName + "</div>" +
-                            "</div>"
-
-                            +
-                            "</div>";
-
-                        // This javascript will embed the pictures. 
-                        imagesScript += "document.getElementById(\"offering" + offering_id + "\").src = \"data:image/jpg;base64,\" + \"" + display_pic + "\";";
+    var searchResult;
+    
+    // find search results
+    try {
+        searchResult = await elasticClient.search({
+            index: 'offerings',
+            type: 'offering',
+            body: {
+                "query": {
+                    "multi_match": {
+                        "query": query,
+                        "fields": ["description", "item"]
                     }
-                    
-                    // Render Search Results HTML.
-                    responseHTTP.render("search-result", {
-                        allResults: htmlResult,
-                        imagesScript: imagesScript,
-                        username: null,
-                        hasNoResults: false
-                    });
                 }
-            });
-        }
+            }
+        });
+        // print result
+        console.log(searchResult);
+    } catch (err) {
+        console.log("Error while performing search using elasticsearch.");
+        next(err);
+    }
+    
+    var offeringIdList = [];
+    // Add all the ids of the results to a list
+    searchResult.hits.hits.forEach(function(hit) {
+                offeringIdList.push(hit._id);
+            }); 
+            
+    // If we found no results.        
+    if (offeringIdList === undefined || offeringIdList.length == 0) {
+        // array empty or does not exist
+        responseHTTP.render("search-result", {
+                allResults: "",
+                imagesScript: "",
+                username: null, 
+                hasNoResults: true
+        });
+        return ;
+    }
+    
+    // find all offerings corresponding to the results.
+    var offerings;
+    try {
+        offerings = await pool.query("SELECT * FROM offerings WHERE offering_id IN (" + offeringIdList.join(',') + ");");
+    } catch (err) {
+        console.log("Error while finding offerings corresponding to elasticsearch results");
+        next(err);
+    }
+    
+    // make html for all the offerings we want to render
+    var htmlResult = "";
+    var imagesScript = "";
+    for (var i = 0; i < offerings.rowCount; i++) {
+        var rowData = offerings.rows[i];
+        var itemName = rowData.item;
+        var price = rowData.price;
+        var display_pic = helper.convertHexToBase64(rowData.image_1);
+        var offering_id = rowData.offering_id;
+
+        // The structures that will contain the offering information. 
+        htmlResult +=
+            "<div class='column1'>" +
+
+            "<a href = 'offering/" + offering_id + "'>" +
+            "<img class='offering-image' src='' id='offering" + offering_id + "'>" +
+            "</a>" +
+
+            "<div class='d-flex flex-column card-text'>" +
+            "<div class='card-item'>" + price + "$</div>" +
+            "<div class='card-item'>" + itemName + "</div>" +
+            "</div>"
+
+            +
+            "</div>";
+
+        // This javascript will embed the pictures. 
+        imagesScript += "document.getElementById(\"offering" + offering_id + "\").src = \"data:image/jpg;base64,\" + \"" + display_pic + "\";";
+    }
+    
+    // Render Search Results HTML.
+    responseHTTP.render("search-result", {
+        allResults: htmlResult,
+        imagesScript: imagesScript,
+        username: null,
+        hasNoResults: false
     });
 });
 
 // Prepares the homepage and renders it. 
-app.get("/", function(req, res) {
+app.get("/", async function(req, res, next) {
     var username = null;
     if (req.isAuthenticated()) {
         username = req.user.username;
@@ -173,79 +175,86 @@ app.get("/", function(req, res) {
     var imagesScript = "";
     var interestButtonScript = "";
     var user_id = null;
+    
+    // Get the id of the currently logged in user.
+    try {
+       var queryResult = await pool.query("SELECT id from users where username=$1;", [username]);
+       if (queryResult.rows.length > 0) {
+            user_id = queryResult.rows[0].id;
+        }
+    } catch (err) {
+       console.log("(homepage)There was an error while" + 
+       "getting the id of the currently logged user.");
+       next(err);
+    }
+    
+    // Get the details of the four most recent offerings from the database.
+    var offerings;
+    try {
+        offerings = await pool.query("SELECT item, image_1, price, offering_id from offerings ORDER BY time_stamp DESC limit 4;");
+    } catch (err) {
+        console.log("there was an error while getting the most recent offerings on the homepage.");
+        next(err);
+    }
+    
+    // Construct HTML and JS for offerings. 
+    for (var i = 0; i < offerings.rows.length; i++) {
+        var price = offerings.rows[i].price;
+        var image = helper.convertHexToBase64(offerings.rows[i].image_1);
+        var item = offerings.rows[i].item;
+        var offering_id = offerings.rows[i].offering_id;
+        offeringsHTML +=
+            "<div class='product col-sm-3'>" +
+            "<a href = 'offering/" + offering_id + "'>" +
+            "<img src = '' id='offering" + i + "'>" +
+            "</a>" +
+            "<div class='d-flex flex-column card-text'>" +
+            "<div class='card-item'>" + price + "</div>" +
+            "<div class='card-item'>" + item + "</div>" +
+            "<div class='card-item cart-button-container'><button class='rounded' id='interestButton" + offering_id + "'>Interested</button></div>" +
+            "</div>" +
+            "</div>";
 
-    // Get the user-id of the current user. 
-    pool.query("SELECT id from users where username=$1;", [username])
-        .then((result) => {
-            // If we are logged in ! 
-            if (result.rows.length > 0) {
-                user_id = result.rows[0].id;
-            }
-            // Get the details of the four most recent offerings from the database.
-            pool.query("SELECT item, image_1, price, offering_id from offerings ORDER BY time_stamp DESC limit 4;", function(err, result) {
-                if (err) {
-                    console.log(err);
-                }
-                else {
-                    for (var i = 0; i < result.rows.length; i++) {
-                        var price = result.rows[i].price;
-                        var image = helper.convertHexToBase64(result.rows[i].image_1);
-                        var item = result.rows[i].item;
-                        var offering_id = result.rows[i].offering_id;
-                        offeringsHTML +=
-                            "<div class='product col-sm-3'>" +
-                            "<a href = 'offering/" + offering_id + "'>" +
-                            "<img src = '' id='offering" + i + "'>" +
-                            "</a>" +
-                            "<div class='d-flex flex-column card-text'>" +
-                            "<div class='card-item'>" + price + "</div>" +
-                            "<div class='card-item'>" + item + "</div>" +
-                            "<div class='card-item cart-button-container'><button class='rounded' id='interestButton" + offering_id + "'>Interested</button></div>" +
-                            "</div>" +
-                            "</div>";
+        // Create the script that will embed the corresponding image.
+        imagesScript += "document.getElementById(\"offering" + i + "\").src = \"data:image/jpg;base64,\" + \"" + image + "\";";
+        // Creates scripts that give functionality to the offering-interest button.
+        interestButtonScript +=
+            "$('#interestButton" + offering_id + "').click(function() {" +
+            "$.ajax({" +
+            "url: '/offering-interests'," +
+            "type: 'POST'," +
+            "data: {" +
+            "offering_id: '" + offering_id + "'," +
+            "user_id: '" + user_id + "'" +
+            "}," +
+            "success: function(msg) {" +
+            "alert('Email Sent');" +
+            "}" +
+            "});" +
+            "});";
+    }
 
-                        // Create the script that will embed the corresponding image.
-                        imagesScript += "document.getElementById(\"offering" + i + "\").src = \"data:image/jpg;base64,\" + \"" + image + "\";";
-                        // Creates scripts that give functionality to the offering-interest button.
-                        interestButtonScript +=
-                            "$('#interestButton" + offering_id + "').click(function() {" +
-                            "$.ajax({" +
-                            "url: '/offering-interests'," +
-                            "type: 'POST'," +
-                            "data: {" +
-                            "offering_id: '" + offering_id + "'," +
-                            "user_id: '" + user_id + "'" +
-                            "}," +
-                            "success: function(msg) {" +
-                            "alert('Email Sent');" +
-                            "}" +
-                            "});" +
-                            "});";
-                    }
-
-                    // Render the page
-                    if (req.isAuthenticated()) {
-                        res.render("home", {
-                            username: req.user.username,
-                            offeringsHTML: offeringsHTML,
-                            imagesScript: imagesScript,
-                            interestButtonScript: interestButtonScript
-                        });
-                    }
-                    else {
-                        res.render("home", {
-                            username: null,
-                            offeringsHTML: offeringsHTML,
-                            imagesScript: imagesScript,
-                            interestButtonScript: interestButtonScript
-                        });
-                    }
-                }
-            });
+    // Render the page based on whether the user is logged in.
+    if (req.isAuthenticated()) {
+        res.render("home", {
+            username: req.user.username,
+            offeringsHTML: offeringsHTML,
+            imagesScript: imagesScript,
+            interestButtonScript: interestButtonScript
         });
+    }
+    else {
+        res.render("home", {
+            username: null,
+            offeringsHTML: offeringsHTML,
+            imagesScript: imagesScript,
+            interestButtonScript: interestButtonScript
+        });
+    }
 });
 
-app.post("/offering-interests", function(req, res) {
+// Handle request for registering a request in an offering.
+app.post("/offering-interests", isLoggedIn, function(req, res) {
     var offering_id = req.body.offering_id;
     var user_id = req.body.user_id;
     pool.query("INSERT INTO offering_interests(offering_id, user_id) VALUES($1, $2);", [offering_id, user_id], function(err, result) {
@@ -259,6 +268,7 @@ app.post("/offering-interests", function(req, res) {
     console.log("You have reached me !!!");
 });
 
+// The default home without current-user specific info.
 app.get("/home", function(req, res) {
     res.render("home", { username: null });
 });
@@ -275,7 +285,8 @@ app.get("/register", function(req, res) {
 // - sends a verification email
 // - stores the salt in a verificationtable table in the database, so that the link in the 
 //    verification email can verify the user.
-app.post("/register", function(req, res) {
+app.post("/register", async function(req, res, next) {
+    // collect user info
     const username = req.body.username;
     const password = req.body.password;
     const firstName = req.body.firstname;
@@ -286,43 +297,47 @@ app.post("/register", function(req, res) {
     var salt = bcrypt.genSaltSync(saltRounds); 
     var hash = bcrypt.hashSync(password, salt);
     // We email a link with salt appended at the end. The use of salts keeps the
-    // link a secret even when the enemy has a hold of the hash function we are
+    // link a secret even when the enemy has hold of the hash function we are
     // using.
     var newSalt = bcrypt.genSaltSync(saltRounds);
     var modifiedSalt = helper.formatHash(newSalt);
     
-    pool.query("SELECT * from users where username=$1", [username], function(err, result) {
-        if (err) {
-            console.log(err);
-        } else {
-            // If no one with the same username exists
-            if (result.rowCount == 0) {
-                console.log("username : " + username);
-                var imageDirectory = __dirname + '/Images/default_profile_picture.jpg';
-                var defaultProfilePic = helper.getHexFromImage(imageDirectory, fs);
-                pool.query("INSERT INTO users (username, password, type, first_name, last_name, email, profile_picture) values($1, $2, $3, $4, $5, $6, $7)",
-                           [username, hash, 'false', firstName, lastName, email, defaultProfilePic], function(err, result) {
-                    if (err) {
-                        console.log(err);
-                    } else {
-                        console.log(result);
-                    }
-                });
-                
-                pool.query("INSERT INTO verificationtable values($1, $2)", [username, modifiedSalt], function(err, result) {
-                    if (err) {
-                        console.log(err);
-                    } else {
-                        console.log(result);
-                    }
-                });
-                emailer.sendEmail(modifiedSalt, email, username,'verification');
-                res.render('emailSent', {email : email, username : null});
+    
+    // Get user info.
+    var queryResult;
+    try {
+        queryResult = await pool.query("SELECT * from users where username=$1", [username]);
+    } catch (err) {
+        console.log("Error while getting information about the user while registering.");   
+        next(err);
+    }
+    
+    // check if user already exist. If he doesn't we store information in the database.
+    // Otherwise we show an error.
+    if (queryResult.rowCount == 0) {
+        console.log("username : " + username);
+        var imageDirectory = __dirname + '/Images/default_profile_picture.jpg';
+        var defaultProfilePic = helper.getHexFromImage(imageDirectory, fs);
+        pool.query("INSERT INTO users (username, password, type, first_name, last_name, email, profile_picture) values($1, $2, $3, $4, $5, $6, $7)",
+                   [username, hash, 'false', firstName, lastName, email, defaultProfilePic], function(err, result) {
+            if (err) {
+                console.log(err);
             } else {
-                res.render('register', { alreadyExists: true });
+                console.log(result);
             }
-        }
-    });
+        });
+        pool.query("INSERT INTO verificationtable values($1, $2)", [username, modifiedSalt], function(err, result) {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log(result);
+            }
+        });
+        emailer.sendEmail(modifiedSalt, email, username,'verification');
+        res.render('emailSent', {email : email, username : null});
+    } else {
+        res.render('register', { alreadyExists: true }); 
+    }
 });
 
 
@@ -337,29 +352,31 @@ app.get("/forgotPassword/requestChange", function(req, res) {
 
 // Displays the page where you can change the password if you are allowed to
 // change the password. 
-app.get("/forgotPassword/requestChange/:nonce/:username", function(req, res) {
+app.get("/forgotPassword/requestChange/:nonce/:username", async function(req, res, next) {
     var nonce = req.params.nonce;
     var username = req.params.username;
-    pool.query("select username from passwordchangeverification where password=$1 AND username=$2", [nonce, username], function(err, result) {
-        if (err) {
-            console.log(err);
-        } else {
-            // If we find that the corresponding entry exists
-            if (result != null && result.rowCount > 0) {
-                res.render('enterNewPassword', {oldHash: nonce, username: null});
-            } else {
-                res.send('There was a problem verifying your identity, please try again');
-                // Deletion prevents malicious users to
-                // brute force on all possible verification links.
-                pool.query("delete from passwordchangeverification where username=$1", [username], function(err, result){
-                        if(err){
-                            console.log(err);
-                        }
-                        console.log('stuff deleted');
-                });
-            }
-        }
-    });
+    var queryResult = null;
+    try {
+        queryResult = await pool.query("select username from passwordchangeverification where password=$1 AND username=$2", [nonce, username]);
+    } catch (err) {
+        console.log("Error while finding whether a correct verifcation entry exists.");
+        next(err);
+    }
+    
+    // If we find that the corresponding entry exists
+    if (queryResult != null && queryResult.rowCount > 0) {
+        res.render('enterNewPassword', {oldHash: nonce, username: username});
+    } else {
+        res.send('There was a problem verifying your identity, please try again');
+        // Deletion prevents malicious users to
+        // brute force on all possible verification links.
+        pool.query("delete from passwordchangeverification where username=$1", [username], function(err, result){
+                if(err){
+                    console.log(err);
+                }
+                console.log('stuff deleted');
+        });
+    }
 });
 
 
@@ -367,42 +384,50 @@ app.get("/forgotPassword/requestChange/:nonce/:username", function(req, res) {
 // Then it updates the records by replacing the old hash at its position in the
 // database by the new hash.
 // Old-hash is also used to verify the user. 
-app.post("/forgotPassword/requestChange/:oldHash/:username", function(req, res) {
+app.post("/forgotPassword/requestChange/:oldHash/:username", async function(req, res, next) {
+    // gather user information.
     var oldHash = req.params.oldHash;
     const saltRounds = 10;
     const myPlaintextPassword = req.body.password1;
     var salt = bcrypt.genSaltSync(saltRounds);
     var newHash = bcrypt.hashSync(myPlaintextPassword, salt);
-
     var username = req.params.username;
-    pool.query("select username from passwordchangeverification where password=$1 AND username=$2", [oldHash, username], function(err, result) {
+    console.log("oldHash : " + oldHash);
+    console.log("username : " + username);
+    var queryResult;
+    try {
+        queryResult = await pool.query("select username from passwordchangeverification where password=$1 AND username=$2", [oldHash, username]);
+    } catch (err) {
+        console.log("Error while determining whether the password change request was legitimate.");
+        next(err);
+    }
+    console.log("queryResult  " + queryResult);
+    console.log(queryResult == null);
+    
+    // If the request is legitimate.
+    if (queryResult != null && queryResult.rowCount > 0) {
+                // Update password in table
+        pool.query("update users set password=$1 where username=$2", [newHash, username], function(err, result) {
+            if (err) {
+                console.log(err);
+            } else {
+                res.send("<h1> Your password has been updated.</h1>");
+            }
+        });
+    } else {
+        res.send("There was some problem in verifying your identity.");
+    }
+    
+    // Delete the entry in table passwordchangeverification as it is
+    // no longer needed. Deletion also prevents malicious users to
+    // brute force on all possible verification links.
+    pool.query("delete from passwordchangeverification where username=$1", [username], function(err, result) {
         if (err) {
+            console.log("problem while deleting entry in"
+            + " passwordchangeverification.");
             console.log(err);
         } else {
-            if (result != null && result.rowCount > 0) {
-                // Update password in table
-                pool.query("update users set password=$1 where username=$2", [newHash, username], function(err, result) {
-                    if (err) {
-                        console.log(err);
-                    } else {
-                        res.send("<h1> Your password has been updated.</h1>");
-                    }
-                });
-            } else {
-                res.send("There was some problem in verifying your identity.");
-            }
-            // Delete the entry in table passwordchangeverification as it is
-            // no longer needed. Deletion also prevents malicious users to
-            // brute force on all possible verification links.
-            pool.query("delete from passwordchangeverification where username=$1", [username], function(err, result) {
-                            if (err) {
-                                console.log("problem while deleting entry in"
-                                + " passwordchangeverification.");
-                                console.log(err);
-                            } else {
-                                console.log('stuff deleted');
-                            }
-                        });
+            console.log('stuff deleted');
         }
     });
 
@@ -767,17 +792,6 @@ memoryUpload.fields(
             res.send("Make sure you uploaded one of each 4 images");
             return;
         }
-        
-
-        // if (req.files['otherImages'].length == 3) {
-        //     pic_2 = helper.getHexFromBuffer(req.files['otherImages'][0].buffer);
-        //     pic_3 = helper.getHexFromBuffer(req.files['otherImages'][1].buffer);
-        //     pic_4 = helper.getHexFromBuffer(req.files['otherImages'][2].buffer);
-        // } else {
-        //     res.send("The should upload exactly 3 images other than the" +
-        //       "display pic. You tried to upload " + req.files['otherImages'].length + " images.");
-        //     return;
-        // }
     
         pool.query("INSERT INTO offerings(item, user_id, description, price, item_type, item_model_author, image_1, image_2, image_3, image_4) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING offering_id;", [item, req.user.id, description, price, itemType, itemModel, pic_1, pic_2, pic_3, pic_4], 
         function(err, result) {
