@@ -509,20 +509,19 @@ app.get("/logout", function(req, res) {
 });
 
 // Displays the profile of the logged in user. 
-app.get("/profile", isLoggedIn, function(req, res) {
+app.get("/profile", isLoggedIn, async function(req, res, next) {
     var username  = req.user.username;
-    pool.query("SELECT profile_picture from users where username = $1", [username],
-        function(err, result) {
-           if (err) {
-               console.log("There was an error while fetching the profile picture for"
+    try {
+        var result = await pool.query("SELECT profile_picture from users"
+        + " where username = $1;", [username]);
+        var profile_picture = helper.convertHexToBase64(result.rows[0].profile_picture);
+        res.render("profile", { username: username, profile_picture: profile_picture });
+    } catch (err) {
+        console.log("There was an error while fetching the profile picture for"
                + "user : " + req.user.username);
-               console.log(err);
-               res.render("profile", { username: username, profile_picture: "" });
-           } else {
-               var profile_picture = helper.convertHexToBase64(result.rows[0].profile_picture);
-               res.render("profile", { username: username, profile_picture: profile_picture });
-           }
-        });
+        next(err);
+        res.render("profile", { username: username, profile_picture: "" });
+    }
 });
 
 app.get("/profile2", function(req, res) {
@@ -531,93 +530,6 @@ app.get("/profile2", function(req, res) {
 
 var memoryStorage = multer.memoryStorage();
 var memoryUpload = multer({ storage: memoryStorage });
-
-let upload = multer({
-    storage: multer.diskStorage({
-        destination: (req, file, callback) => {
-            console.log("holalal");
-            let type = req.params.type;
-            console.log(file);
-            let path = './users/' + req.user.username;
-            if (!fs.existsSync(path)) {
-                fs.mkdirsSync(path);
-            }
-            callback(null, path);
-        },
-        filename: (req, file, callback) => {
-            //originalname is the uploaded file's name with extn
-            callback(null, file.originalname);
-        }
-    })
-});
-
-const storage2 = multer.diskStorage({
-    destination: function(req, file, cb) {
-        let path = './users/' + 'harshv' + '/offerings/' + 'something' + "/" + file.fieldname;
-        if (!fs.existsSync(path)) {
-            mkdirp.sync(path);
-            console.log("a directory was made for you");
-        }
-        
-        cb(null, path);
-    },
-    filename: function(req, file, cb) {
-        cb(null, file.originalname + Date.now() + path.extname(file.originalname));
-    }
-});
-
-// init upload
-const upload2 = multer({
-    storage: storage2
-}).fields([{
-    name: 'dp',
-    maxCount: 4
-}, {
-    name: 'other',
-    maxCount: 5
-}]);
-
-
-let uploadOfferingImages = multer({
-    storage: multer.diskStorage({
-        destination: (req, file, callback) => {
-            console.log("hola");
-            let path = './users/' + req.user.username + '/offerings/' + req.params.time.toString() + "/" + file.fieldname;
-            if (!fs.existsSync(path)) {
-                mkdirp.sync(path);
-                console.log("a directory was made for you");
-            }
-            callback(null, path);
-        },
-        filename: (req, file, callback) => {
-            //originalname is the uploaded file's name with extn
-            callback(null, file.originalname);
-        }
-    })
-}).fields([{
-    name: 'dp',
-    maxCount: 2
-}, {
-    name: 'otherImages',
-    maxCount: 4
-}]);
-
-let uploadOfferingDisplayImage = multer({
-    storage: multer.diskStorage({
-        destination: (req, file, callback) => {
-            let path = './users/' + req.user.username + '/offerings/' + req.params.time.toString() + "/displayImage";
-            if (!fs.existsSync(path)) {
-                mkdirp.sync(path);
-                console.log("a directory was made for you");
-            }
-            callback(null, path);
-        },
-        filename: (req, file, callback) => {
-            //originalname is the uploaded file's name with extn
-            callback(null, file.originalname);
-        }
-    })
-});
 
 // Uploads a new profile picture to the database, updating the user's profile.
 app.post("/uploadProfilePicture", [isLoggedIn, memoryUpload.single('myImage')], (req, res) => {
@@ -637,15 +549,16 @@ app.post("/uploadProfilePicture", [isLoggedIn, memoryUpload.single('myImage')], 
 });
 
 // displays the details of an offering.
-app.get("/offering/:offeringID", isLoggedIn ,function(req, response) {
+app.get("/offering/:offeringID", isLoggedIn ,async function(req, response, next) {
     // get information about the offering with offering ID = offeringID
-    pool.query("select * from offerings INNER JOIN users ON (users.id = offerings.user_id) where offerings.offering_id = $1 ;", [req.params.offeringID])
-    .then((result) => {
+    try {
+        var result = await pool.query("select * from offerings INNER JOIN users ON (users.id =" 
+        + " offerings.user_id) where offerings.offering_id = $1 ;", [req.params.offeringID]);
         if (result.rowCount == 0) {
             response.send("Offering doesn't exist");
         }
         else {
-            var userName = result.rows[0].username;
+            var offeringUsername = result.rows[0].username;
             var display_image = helper.convertHexToBase64(result.rows[0].image_1);
             var other_image1 = helper.convertHexToBase64(result.rows[0].image_2);
             var other_image2 = helper.convertHexToBase64(result.rows[0].image_3);
@@ -660,47 +573,47 @@ app.get("/offering/:offeringID", isLoggedIn ,function(req, response) {
             otherImagesHTML +=
                 "<div class='column1'>" +
                 "<img class='offering-image' src='' id='other_image1'>" +
-                "</div>"
+                "</div>";
             imagesScript += "document.getElementById(\"other_image1\").src = \"data:image/jpg;base64,\" + \"" + other_image1 + "\";" ; 
             otherImagesHTML +=
                 "<div class='column1'>" +
                 "<img class='offering-image' src='' id='other_image2'>" +
-                "</div>"
+                "</div>";
             imagesScript += "document.getElementById(\"other_image2\").src = \"data:image/jpg;base64,\" + \"" + other_image2 + "\";" ;
             otherImagesHTML +=
                 "<div class='column1'>" +
                 "<img class='offering-image' src='' id='other_image3'>" +
-                "</div>"
+                "</div>";
             imagesScript += "document.getElementById(\"other_image3\").src = \"data:image/jpg;base64,\" + \"" + other_image3 + "\";" ;
             
             // Create HTML for the display image. 
             imagesScript += "document.getElementById(\"display_image\").src = \"data:image/jpg;base64,\" + \"" + display_image + "\";" ;
             
             // Query for the number of likes this offering has received
-            pool.query("SELECT COUNT(*) FROM offering_interests WHERE offering_id=$1;", [req.params.offeringID],
-                function(err, result) {
-                     if (err) {
-                         console.log("There was an error while finding the" +
+            try {
+                var interestResults = await pool.query("SELECT COUNT(*) FROM offering_interests WHERE offering_id=$1;", [req.params.offeringID]);
+                var numberOfInterestedPeople = interestResults.rows[0].count;
+                 response.render("offering", {
+                   username: req.user.username,
+                   offeringUsername : offeringUsername,
+                   productName: productName,
+                   price: price,
+                   description: description,
+                   imagesScript: imagesScript,
+                   otherImagesHTML: otherImagesHTML, 
+                   numberOfInterestedPeople: numberOfInterestedPeople
+                 });
+            } catch (err) {
+               console.log("There was an error while finding the" +
                          "number of intersts for offering with" + 
                          "offering_id : " + req.params.offeringID );
-                         console.log(err);
-                     } else {
-                         var numberOfInterestedPeople = result.rows[0].count;
-                         response.render("offering", {
-                           username: req.user.username,
-                           productName: productName,
-                           price: price,
-                           description: description,
-                           imagesScript: imagesScript,
-                           otherImagesHTML: otherImagesHTML, 
-                           numberOfInterestedPeople: numberOfInterestedPeople
-                         });
-                     } 
-                }
-            );
+               next(err); 
+            }
         }
-    })
-    .catch(err => console.error('Error executing query', err.stack));
+    } catch (err) {
+        console.log("There was an error while fetching the offering info of offering id : " + req.params.offeringID );
+        next(err);
+    }
 });
 
 // Display the offerings page where all the offerings made by the user are
