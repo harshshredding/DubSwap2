@@ -11,5 +11,16 @@ pool.on('error', (err, client) => {
   process.exit(-1);
 });
 
+async function someFunction() {
+  try {
+    const { rows } = await Pool.query('SELECT username from users;');
+    console.log(rows);
+  } catch (err) {
+    console.lo
+  }
+}
+
+
+
 // export resources
 module.exports = pool;

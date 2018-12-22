@@ -1,5 +1,6 @@
 // Dependencies
 // ***********************************
+
 var express = require("express"),
     app = express(),
     bodyParser = require("body-parser"),
@@ -9,19 +10,26 @@ var express = require("express"),
     session = require('express-session'),
     bcrypt = require("bcrypt"),
     emailer = require('./test/test-email-verification/sendEmail.js'),
-    helper = require('./helper.js');
+    helper = require('./helper.js'),
+    passportSocketIo = require("passport.socketio"),
+    pgsession = require("connect-pg-simple")(session),
+    store = new pgsession({pool : pool}); 
 var multer = require('multer');
 var path = require('path');
 var fs = require('fs');
 var mkdirp = require('mkdirp');
 var elasticClient = require("./elasticsearch/connection.js");
+var http = require('http').Server(app);
 
 
-
+console.log(process.env.PORT);
+console.log(process.env.IP);
 app.use(session({
     secret: 'keyboard cat',
     resave: false,
-    saveUninitialized: true
+    saveUninitialized: true,
+    key: 'express.sid',
+    store: store
 }));
 
 app.use(passport.initialize());
@@ -42,7 +50,7 @@ app.use(function(err, req, res, next) {
 
 app.locals = {
     username: null
-}
+};
 
 // Set the timezone of the database to MST because most of the users will be
 // in Seattle.
@@ -80,6 +88,50 @@ require('./routes/search')(app);
 
 // Boiler plate again, 
 // this starts the server
-app.listen(process.env.PORT, process.env.IP, function() {
+var server = app.listen(process.env.PORT, process.env.IP, function() {
     console.log("The server has started my dear hoho");
 });
+
+var io = require('socket.io').listen(server);
+
+//With Socket.io >= 1.0
+io.use(passportSocketIo.authorize({
+  cookieParser: require('cookie-parser'),
+  passport:      passport,
+  key:          'express.sid',       // the name of the cookie where express/connect stores its session_id
+  secret:       'keyboard cat',    // the session_secret to parse the cookie
+  store:         store,       // we NEED to use a sessionstore. no memorystore please
+  success:      onAuthorizeSuccess,  // *optional* callback on success - read more below
+  fail:         onAuthorizeFail,     // *optional* callback on fail/error - read more below
+}));
+
+function onAuthorizeSuccess(data, accept){
+  console.log('successful connection to socket.io');
+
+  // The accept-callback still allows us to decide whether to
+  // accept the connection or not.
+  accept(null, true);
+
+  // OR
+
+  // If you use socket.io@1.X the callback looks different
+  accept();
+}
+
+function onAuthorizeFail(data, message, error, accept){
+  if(error)
+    throw new Error(message);
+  console.log('failed connection to socket.io:', message);
+
+  // We use this callback to log all of our failed connections.
+  accept(null, false);
+
+  // OR
+
+  // If you use socket.io@1.X the callback looks different
+  // If you don't want to accept the connection
+  if(error)
+    accept(new Error(message));
+  // this error will be sent to the user as a special error-package
+  // see: http://socket.io/docs/client-api/#socket > error-object
+}

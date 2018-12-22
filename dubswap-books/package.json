@@ -13,16 +13,22 @@
     "bcrypt": "^1.0.3",
     "body-parser": "^1.18.2",
     "browserify": "^16.2.3",
+    "connect-pg-simple": "^5.0.0",
+    "cookie-parser": "^1.4.3",
     "ejs": "^2.5.7",
     "elasticsearch": "^15.1.1",
     "express": "^4.16.2",
     "express-session": "^1.15.6",
     "fs": "0.0.1-security",
+    "http": "0.0.0",
+    "memorystore": "^1.6.0",
     "mkdirp": "^0.5.1",
     "node-bcrypt": "0.0.1",
     "nodemailer": "^4.6.2",
     "passport": "^0.4.0",
     "passport-local": "^1.0.0",
-    "pg": "^7.4.1"
+    "passport.socketio": "^3.7.0",
+    "pg": "^7.4.1",
+    "socket.io": "^2.2.0"
   }
 }
