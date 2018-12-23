@@ -17,14 +17,36 @@ var mkdirp = require('mkdirp');
 var elasticClient = require("../elasticsearch/connection.js");
 
 
-module.exports = function(app, io){
+module.exports = function(app, io, pool){
     // renders registration page
     app.get("/message", isLoggedIn, function(req, res) {
         res.render("message");
     });
     
-    io.on('connection', () =>{
-        console.log('a user is connected');
+    io.on('connection', async function(socket) {
+        // Tell the client that he is connected
+        socket.emit('acknowledgement', 'you are being acknowledged!');
+        // Handle a new chat message from a client
+        socket.on('new-chat-message', function(data) {
+            console.log("message-recieved :" + data);
+            var fromId = data.fromId;
+            var toId = data.toId;
+            var message = data.message;
+            pool.query("INSERT INTO messages VALUES ($1, $2, $3);", [fromId, toId, message]);
+            // Send this message to all the users
+            io.emit('new-chat-message', data);
+        });
+        // Send all chat messages to the client after he asks for them
+        socket.on('all-messages', function() {
+            pool.query("SELECT * from messages;", function(err, result) {
+               if (err) {
+                   console.log("There was some error while getting all messages");
+                   console.log(err);
+               } else {
+                   socket.emit('all-messages', result.rows);
+               }
+            });
+        })
     });
 };
 

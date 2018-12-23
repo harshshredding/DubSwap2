@@ -2,8 +2,39 @@
 
 <ul id="messages"></ul>
 <div>
-  <input id="m" ng-model="message" autocomplete="off" />
-  <button ng-click="send()">Send</button>
+  <form action="">
+    <input id="m" ng-model="message" autocomplete="off" />
+    <button ng-click="send()">Send</button>
+  </form>
 </div>
-    
+
+
+<!-- Javascript -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.slim.js"></script>
+<script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+<script>
+  var socket = io();
+  // Ping server.
+  socket.on("acknowledgement", function() {
+    console.log("Oooo I got an acknowledgement!");
+  });
+  
+  socket.on('all-messages', function(data) {
+    for (var i = 0; i < data.length; i++) {
+      $('#messages').append($('<li>').text(data[i].content));
+    }
+  });
+  
+  socket.emit('all-messages');
+  
+  // Send new message to server
+  $(function () {
+    $('form').submit(function(){
+      console.log("emmiting chat message");
+      socket.emit('new-chat-message', {fromId: 1, toId: 2, message: $('#m').val()});
+      $('#m').val('');
+      return false;
+    });
+  });
+</script>
 <% include partials/footer %>

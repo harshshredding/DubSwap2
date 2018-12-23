@@ -48,6 +48,25 @@ app.use(function(err, req, res, next) {
     res.status(500).send('Something broke!');
 });
 
+// Boiler plate again, 
+// this starts the server
+var server = app.listen(process.env.PORT, process.env.IP, function() {
+    console.log("The server has started my dear hoho");
+});
+
+var io = require('socket.io').listen(server);
+
+//With Socket.io >= 1.0
+io.use(passportSocketIo.authorize({
+  cookieParser: require('cookie-parser'),
+  passport:      passport,
+  key:          'express.sid',       // the name of the cookie where express/connect stores its session_id
+  secret:       'keyboard cat',    // the session_secret to parse the cookie
+  store:         store,       // we NEED to use a sessionstore. no memorystore please
+  success:      onAuthorizeSuccess,  // *optional* callback on success - read more below
+  fail:         onAuthorizeFail,     // *optional* callback on fail/error - read more below
+}));
+
 app.locals = {
     username: null
 };
@@ -85,25 +104,7 @@ require('./routes/authentication')(app);
 require('./routes/homepage')(app);
 require('./routes/offering')(app);
 require('./routes/search')(app);
-
-// Boiler plate again, 
-// this starts the server
-var server = app.listen(process.env.PORT, process.env.IP, function() {
-    console.log("The server has started my dear hoho");
-});
-
-var io = require('socket.io').listen(server);
-
-//With Socket.io >= 1.0
-io.use(passportSocketIo.authorize({
-  cookieParser: require('cookie-parser'),
-  passport:      passport,
-  key:          'express.sid',       // the name of the cookie where express/connect stores its session_id
-  secret:       'keyboard cat',    // the session_secret to parse the cookie
-  store:         store,       // we NEED to use a sessionstore. no memorystore please
-  success:      onAuthorizeSuccess,  // *optional* callback on success - read more below
-  fail:         onAuthorizeFail,     // *optional* callback on fail/error - read more below
-}));
+require('./routes/chat')(app, io, pool);
 
 function onAuthorizeSuccess(data, accept){
   console.log('successful connection to socket.io');
