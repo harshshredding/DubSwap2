@@ -14,17 +14,25 @@
 <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
 <script>
   var socket = io();
+  
   // Ping server.
   socket.on("acknowledgement", function() {
     console.log("Oooo I got an acknowledgement!");
   });
   
+  // This event is usually received when the page is loaded.
   socket.on('all-messages', function(data) {
     for (var i = 0; i < data.length; i++) {
       $('#messages').append($('<li>').text(data[i].content));
     }
   });
   
+  //  This event represents a new chat message sent by a user.
+  socket.on('new-chat-message', function(data) {
+    $('#messages').append($('<li>').text(data.username + ' : ' + data.message));
+  });
+  
+  // This event requests all messages from the server when the page is loaded.
   socket.emit('all-messages');
   
   // Send new message to server
