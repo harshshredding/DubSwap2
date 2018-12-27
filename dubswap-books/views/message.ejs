@@ -1,7 +1,17 @@
 <% include partials/header %>
 
-<ul id="messages"></ul>
+
 <div>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-4">
+        <ul id="user-list"></ul>
+      </div>
+      <div class="col-8">
+        <ul id="messages"></ul>
+      </div>
+    </div>
+  </div>
   <form action="">
     <input id="m" ng-model="message" autocomplete="off" />
     <button ng-click="send()">Send</button>
@@ -14,10 +24,31 @@
 <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
 <script>
   var socket = io();
+  var online_status_updated = 0;
   
   // Ping server.
   socket.on("acknowledgement", function() {
     console.log("Oooo I got an acknowledgement!");
+  });
+  console.log("received user list outside");
+  
+  // Get chat-user-list
+  socket.on('user-list', function(data){
+    console.log("received user list");
+    console.log(data.online_status_updated);
+    if (data.online_status_updated > online_status_updated) {
+      console.log('------------------------------------------');
+      console.log('prev online-stat ', online_status_updated);
+      console.log('received online-stat ', data.online_status_updated);
+      console.log('------------------------------------------');
+      var rows = data.rows;
+      online_status_updated = data.online_status_updated;
+      $('#user-list').empty();
+      for (var i = 0; i < rows.length; i++) {
+        $('#user-list').append($('<li>').text(rows[i].username 
+          + ' ' + rows[i].online));
+      }
+    }
   });
   
   // This event is usually received when the page is loaded.

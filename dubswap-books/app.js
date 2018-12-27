@@ -82,6 +82,15 @@ pool.query("ALTER DATABASE dubswap SET TIME ZONE 'MST';", function(err, result) 
    }
 });
 
+// All users should be offline when the server starts.
+pool.query("UPDATE users SET online = 'f';", function (err, result) {
+   if (err) {
+       throw new Error("error while initializing online status. " + err);
+   } else {
+       console.log("We initialized online status successfully");
+   }
+});
+
 // Check whether the 'offerings' index exists in elasticsearch.
 // The 'offerings' index is essential for the search bar.
 elasticClient.indices.exists({index : "offerings"}, function (err, res, status){

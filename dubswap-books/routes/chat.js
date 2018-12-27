@@ -27,25 +27,16 @@ module.exports = function(app, io, pool, store){
     
     // Handle all events related to messaging
     io.on('connection', async function(socket) {
-        console.log('hello');
+        
+        //console.log("connecting at " + date.getTime());
         var sessionId = socket.client.request.sessionID;
         var client_user_id;
-        if (client_user_id == null) {
-            console.log("client is null");
-        }
-        // try {
-        //     var session = await store.get(sessionId);
-        //     console.log(session.passport.user);
-        // } catch (err) {
-        //     console.log(err);
-        // }
         
-        store.get(sessionId, function(err, session) {
+        store.get(sessionId, async function(err, session) {
              if(!err) {
-                 client_user_id = session.passport.user;
-                //  console.log(session);
-                //  if(session.passport.user) 
-                //      console.log('user id %s', session.passport.user);
+                client_user_id = session.passport.user;
+                console.log('user with client_id : ' + client_user_id + ' connected');
+                updateOnlineStatus(io, client_user_id, false);
              } else {
                 console.log("could not get details of user from session store");
              }
@@ -86,8 +77,56 @@ module.exports = function(app, io, pool, store){
                }
             });
         });
+       
+        socket.on('disconnect', async function() {
+            try {
+                console.log("user disconected");
+                updateOnlineStatus(io, client_user_id, true);
+            }
+            catch (err) {
+                console.log('There was some error while updating online status of the user', err);
+            }
+        });
+    
     });
 };
+
+var updateOnlineStatus = async function(io, client_user_id, isDisconnecting) {
+    var date = new Date();
+    var time = date.getTime();
+
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+        await client.query('LOCK TABLE users;');
+        if (isDisconnecting) {
+            await client.query('UPDATE users SET online=FALSE WHERE id' +
+            '  = $1 AND online_status_updated < $2;', [client_user_id, time]);
+        } else {
+            await client.query('UPDATE users SET online=TRUE WHERE id' +
+            '  = $1 AND online_status_updated < $2;', [client_user_id, time]);
+        }
+        await client.query('COMMIT');
+    }
+    catch (e) {
+        await client.query('ROLLBACK');
+        throw e;
+    }
+    finally {
+        client.release();
+    }
+
+    var qResult;
+    try {
+        qResult = await pool.query('SELECT id, username, online from users;');
+        io.emit('user-list', { rows: qResult.rows, online_status_updated: time });
+    }
+    catch (err) {
+        console.log("There was an error while getting user-list" +
+            " information from the database", err);
+    }
+}
 
 // a middleware which checks whether a user is logged in
 function isLoggedIn(req, res, next) {
@@ -96,3 +135,4 @@ function isLoggedIn(req, res, next) {
     }
     return res.redirect("/login");
 }
+
