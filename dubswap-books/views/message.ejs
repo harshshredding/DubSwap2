@@ -25,7 +25,9 @@
 <script>
   var socket = io();
   var online_status_updated = 0;
-  
+  var username = '<%- username %>';
+  var toID;
+  var messageList = [];
   // Ping server.
   socket.on("acknowledgement", function() {
     console.log("Oooo I got an acknowledgement!");
@@ -45,8 +47,32 @@
       online_status_updated = data.online_status_updated;
       $('#user-list').empty();
       for (var i = 0; i < rows.length; i++) {
-        $('#user-list').append($('<li>').text(rows[i].username 
-          + ' ' + rows[i].online));
+        $('#user-list')
+        .append(
+            $('<li>')
+            .text(rows[i].username + ' ' + rows[i].online).attr('id', rows[i].id)
+            .click(rows, function() {
+              console.log('old toID : ', toID);
+              console.log('new toID : ', this.id);
+              toID = this.id;
+              console.log('user with id '+ this.id +' was clicked');
+              
+              // Ask for the conversation(messages) between this user and
+              // toID.
+              // First empty both markup and messageList
+              $('#messages').empty();
+              messageList = [];
+              $('#messages').append($('<li>').text('Loading'));
+              socket.emit('get-conversation', toID, function(messages) {
+                // Add all messages to the messageList
+                messageList = messages;
+                 $('#messages').empty();
+                 for (var i = 0; i < messageList.length; i++) {
+                   $('#messages').append(
+                       $('<li>').text(messages[i].from_id + ' ' + messages[i].content));
+                 }
+              });
+            }))
       }
     }
   });
@@ -60,7 +86,13 @@
   
   //  This event represents a new chat message sent by a user.
   socket.on('new-chat-message', function(data) {
-    $('#messages').append($('<li>').text(data.username + ' : ' + data.message));
+    console.log("handling new message from " + data.fromUsername);
+    $('#' + data.fromId).text(data.fromUsername + ' new message');
+    // Only display new message if you have the corresponding conversation
+    // screen open.
+    if (toID == data.fromId) {
+      $('#messages').append($('<li>').text(data.fromUsername + ' : ' + data.message));
+    }
   });
   
   // This event requests all messages from the server when the page is loaded.
@@ -68,12 +100,21 @@
   
   // Send new message to server
   $(function () {
-    $('form').submit(function(){
+    $('form').submit(function() {
       console.log("emmiting chat message");
-      socket.emit('new-chat-message', {fromId: 1, toId: 2, message: $('#m').val()});
+      var content = $('#m').val();
+      socket.emit('new-chat-message', {toId: toID, message: content});
       $('#m').val('');
+      $('#messages').append($('<li>').text(username + ': ' + content));
       return false;
     });
   });
+  
+  // This function will be used to sort messages based on id which corresponds
+  // to time.
+  var messageListSortFunc = function(ob1, ob2) {
+    return ob1.id - ob2.id;
+  }
+  
 </script>
 <% include partials/footer %>

@@ -105,7 +105,6 @@ elasticClient.indices.exists({index : "offerings"}, function (err, res, status){
     }
 });
 
-
 // All routes
 //***************************************
 

@@ -20,7 +20,7 @@ var elasticClient = require("../elasticsearch/connection.js");
 module.exports = function(app, io, pool, store){
     // renders registration page
     app.get("/message", isLoggedIn, function(req, res) {
-        res.render("message");
+        res.render("message", {username : req.user.username});
     });
     
     console.log("just about to listen");
@@ -35,8 +35,9 @@ module.exports = function(app, io, pool, store){
         store.get(sessionId, async function(err, session) {
              if(!err) {
                 client_user_id = session.passport.user;
-                console.log('user with client_id : ' + client_user_id + ' connected');
-                updateOnlineStatus(io, client_user_id, false);
+                console.log('user with client_id : ' + client_user_id + ' and socket_id ' 
+                + socket.id + ' connected');
+                updateOnlineStatus(io, client_user_id, false, socket);
              } else {
                 console.log("could not get details of user from session store");
              }
@@ -50,15 +51,20 @@ module.exports = function(app, io, pool, store){
                 var fromId = client_user_id;
                 var toId = data.toId;
                 var message = data.message;
-                var qResult = await pool.query("SELECT username FROM users WHERE id = $1;", [fromId]);
-                if (qResult.rowCount != 1) {
+                var qResultSender = await pool.query("SELECT username FROM users WHERE id = $1;", [fromId]);
+                var qResultRecipient = await pool.query("SELECT username, socket_id, online FROM users WHERE id = $1;", [toId]);
+                if (qResultSender.rowCount != 1 || qResultRecipient.rowCount != 1) {
                     console.log("[HIGH PRIORITY] An unregistered user was able "
                     + "to connect to the server.");
                 } else {
                     pool.query("INSERT INTO messages VALUES ($1, $2, $3);", [fromId, toId, message]);
-                    // Send this message to all the users
-                    data.username = qResult.rows[0].username;
-                    io.emit('new-chat-message', data);
+                    data.fromUsername = qResultSender.rows[0].username;
+                    data.toUsername = qResultRecipient.rows[0].username;
+                    data.fromId = client_user_id;
+                    if (qResultRecipient.rows[0].online == true) {
+                        console.log("recipient is online. Recipient's socket id is " + qResultRecipient.rows[0].socket_id);
+                        io.to(qResultRecipient.rows[0].socket_id).emit('new-chat-message', data);
+                    }
                 }
             } catch (err) {
                 console.log("error while handing a new message");
@@ -77,11 +83,22 @@ module.exports = function(app, io, pool, store){
                }
             });
         });
+        
+        socket.on('get-conversation', async function(toId, messagesHandler) {
+            var id1 = client_user_id;
+            var id2 = toId;
+            try {
+                var qResult = await pool.query("SELECT * FROM messages WHERE (from_id = $1 AND to_id = $2) OR (from_id = $2 AND to_id = $1);", [id1, id2]);
+                messagesHandler(qResult.rows);
+            } catch (err) {
+                console.log("error while getting a conversation of two users ." , err);  
+            }
+        });
        
         socket.on('disconnect', async function() {
             try {
                 console.log("user disconected");
-                updateOnlineStatus(io, client_user_id, true);
+                updateOnlineStatus(io, client_user_id, true, socket);
             }
             catch (err) {
                 console.log('There was some error while updating online status of the user', err);
@@ -91,7 +108,7 @@ module.exports = function(app, io, pool, store){
     });
 };
 
-var updateOnlineStatus = async function(io, client_user_id, isDisconnecting) {
+var updateOnlineStatus = async function(io, client_user_id, isDisconnecting, socket) {
     var date = new Date();
     var time = date.getTime();
 
@@ -104,8 +121,8 @@ var updateOnlineStatus = async function(io, client_user_id, isDisconnecting) {
             await client.query('UPDATE users SET online=FALSE WHERE id' +
             '  = $1 AND online_status_updated < $2;', [client_user_id, time]);
         } else {
-            await client.query('UPDATE users SET online=TRUE WHERE id' +
-            '  = $1 AND online_status_updated < $2;', [client_user_id, time]);
+            await client.query('UPDATE users SET online=TRUE, socket_id = $1 WHERE id' +
+            '  = $2 AND online_status_updated < $3;', [socket.id, client_user_id, time]);
         }
         await client.query('COMMIT');
     }
