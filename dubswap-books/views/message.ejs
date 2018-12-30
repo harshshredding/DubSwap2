@@ -1,14 +1,16 @@
 <% include partials/header %>
 
+<link rel="stylesheet" href="/stylesheets/message.css">
 
 <div>
   <div class="container-fluid">
     <div class="row">
       <div class="col-4">
-        <ul id="user-list"></ul>
+        <ul id="user-list" class="list-group">
+        </ul>
       </div>
       <div class="col-8">
-        <ul id="messages"></ul>
+        <ul id="messages" class="message-thread"></ul>
       </div>
     </div>
   </div>
@@ -23,56 +25,79 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.slim.js"></script>
 <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
 <script>
+  // Make a stable connection with the server
   var socket = io();
-  var online_status_updated = 0;
+  // Set the time last time online status was updated to a low enough value.
+  var online_status_update_time = 0;
+  // Get username of this user.
   var username = '<%- username %>';
+  var user_id = <%- user_id %>;
   var toID;
-  var messageList = [];
-  // Ping server.
-  socket.on("acknowledgement", function() {
-    console.log("Oooo I got an acknowledgement!");
-  });
-  console.log("received user list outside");
   
-  // Get chat-user-list
-  socket.on('user-list', function(data){
-    console.log("received user list");
-    console.log(data.online_status_updated);
-    if (data.online_status_updated > online_status_updated) {
-      console.log('------------------------------------------');
-      console.log('prev online-stat ', online_status_updated);
-      console.log('received online-stat ', data.online_status_updated);
-      console.log('------------------------------------------');
+  // This list is supposed to hold all messages of the current conversation.
+  // It is not is use currently, but it will soon become useful when we deal
+  // with group conversations.
+  var messageList = [];
+  
+  // Get chat-user-list which shows which users are online and which users are
+  // offline. This list will fill up the left menu where users can select who
+  // they want to chat with.
+  socket.on('user-list', function(data) {
+    console.log("received a user list");
+    // If we are making a change that has not been made before.
+    if (data.online_status_updated > online_status_update_time) {
       var rows = data.rows;
-      online_status_updated = data.online_status_updated;
+      online_status_update_time = data.online_status_updated;
+      // empty the left menu
       $('#user-list').empty();
+      
       for (var i = 0; i < rows.length; i++) {
+        var online_icon = $('<span>');
+        if (rows[i].online) {
+          online_icon = online_icon.addClass('dot-online');
+        } else {
+          online_icon = online_icon.addClass('dot-offline');
+        }
         $('#user-list')
         .append(
-            $('<li>')
-            .text(rows[i].username + ' ' + rows[i].online).attr('id', rows[i].id)
+            $('<a>')
+            .addClass('user-list-item')
+            .append(online_icon)
+            .append('  ' + rows[i].username)
+            .addClass('list-group-item')
+            .attr('id', rows[i].id)
+            .attr('href', '#')
+            // when user clicks the user item
             .click(rows, function() {
-              console.log('old toID : ', toID);
-              console.log('new toID : ', this.id);
+              // change selected user.
               toID = this.id;
+              highlight(this);
               console.log('user with id '+ this.id +' was clicked');
-              
               // Ask for the conversation(messages) between this user and
               // toID.
               // First empty both markup and messageList
               $('#messages').empty();
               messageList = [];
+              
+              // Tell user we are doing some work.
               $('#messages').append($('<li>').text('Loading'));
+              
+              // Get all messages and add it to the unordered list.
               socket.emit('get-conversation', toID, function(messages) {
                 // Add all messages to the messageList
                 messageList = messages;
-                 $('#messages').empty();
-                 for (var i = 0; i < messageList.length; i++) {
-                   $('#messages').append(
-                       $('<li>').text(messages[i].from_id + ' ' + messages[i].content));
-                 }
+                $('#messages').empty();
+                for (var i = 0; i < messageList.length; i++) {
+                  var message_element = $('<li>').text(messages[i].content);
+                  if (messages[i].from_id == user_id) {
+                    // If this is my message. Make my message blue.
+                    message_element.addClass('my-message');
+                  }
+                  $('#messages').append(message_element);
+                }
+                scrollToBottomMessages();
               });
-            }))
+            }));
       }
     }
   });
@@ -91,7 +116,9 @@
     // Only display new message if you have the corresponding conversation
     // screen open.
     if (toID == data.fromId) {
-      $('#messages').append($('<li>').text(data.fromUsername + ' : ' + data.message));
+      $('#messages').append($('<li>')
+                            .text(data.fromUsername + ' : ' + data.message));
+      scrollToBottomMessages();
     }
   });
   
@@ -105,7 +132,10 @@
       var content = $('#m').val();
       socket.emit('new-chat-message', {toId: toID, message: content});
       $('#m').val('');
-      $('#messages').append($('<li>').text(username + ': ' + content));
+      $('#messages').append($('<li>')
+                             .text(username + ': ' + content)
+                             .addClass('my-message'));
+      scrollToBottomMessages();
       return false;
     });
   });
@@ -114,6 +144,21 @@
   // to time.
   var messageListSortFunc = function(ob1, ob2) {
     return ob1.id - ob2.id;
+  }
+  
+  // This function will highlight a given user's list element in the left menu.
+  var highlight = function(self) {
+    $(".user-list-item").removeClass("active")
+    $(self).addClass('active');
+  }
+  
+  // Scroll messages to bottom.
+  var scrollToBottomMessages = function() {
+    // $('.message-thread').animate({scrollTop: $('.message-thread').prop("scrollHeight")}, 500);
+    const messageThread = document.querySelector('.message-thread');
+    setTimeout(() => {
+      messageThread.scrollTop = messageThread.scrollHeight + 500;
+    }, 10);
   }
   
 </script>

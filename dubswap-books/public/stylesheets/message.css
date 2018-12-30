@@ -1,0 +1,56 @@
+.dot-online {
+  height: 10px;
+  width: 10px;
+  background-color: #00cc00;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-offline {
+  height: 10px;
+  width: 10px;
+  background-color: #bbb;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.message-thread {
+	overflow-y: scroll;
+	list-style-type: none;
+	height: 400px;
+	width: 100%;
+	border: solid 1px #BDBDBD;
+	margin: 0px !important;
+	padding: 5px !important;
+}
+
+.message-thread li {
+	max-width: 300px;
+	border-color: solid 0.5px rgba(0, 0, 0, 0.32);
+	clear: both;
+	text-decoration: none;
+	list-style-type: none;
+	margin: 20px 10px 0px 20px;
+	float: left;
+	margin-right: 20px;
+	padding: 25px 34px;
+	min-width: 160px;
+	min-height: 10px;
+	max-width: 350px;
+	border-radius: 5px;
+	border:solid 1px #0000001f;
+	line-height: 1.4;
+	word-wrap: break-word;
+	color: #444444;
+	text-align: left;
+}
+
+.her-message {
+	float: left !important;
+	background-color: rgba(255, 255, 255, 0.80)
+}
+
+.my-message {
+	float: right !important;
+	background-color: #3ea7ff;
+}

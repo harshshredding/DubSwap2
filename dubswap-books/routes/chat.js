@@ -20,7 +20,8 @@ var elasticClient = require("../elasticsearch/connection.js");
 module.exports = function(app, io, pool, store){
     // renders registration page
     app.get("/message", isLoggedIn, function(req, res) {
-        res.render("message", {username : req.user.username});
+        console.log('----------------- \n', req.user, '--------------------');
+        res.render("message", {username : req.user.username, user_id : req.user.id});
     });
     
     console.log("just about to listen");
