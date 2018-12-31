@@ -24,7 +24,44 @@ module.exports = function(app, io, pool, store){
         res.render("message", {username : req.user.username, user_id : req.user.id});
     });
     
-    console.log("just about to listen");
+    // Register a new conversation between two users
+    app.get("/start-conversation/:toUserId/:offeringId", isLoggedIn, async function(req, res) {
+       var fromId = req.user.id;
+       var fromUsername = req.user.username;
+       var toId = req.params.toUserId;
+       var offeringId = req.params.offeringId;
+       try {
+           var qResult = await pool.query("SELECT username from users where id = $1;", [toId]);
+           if (qResult.rowCount == 1) {
+               var toUsername = qResult.rows[0].username;
+               
+               // Check if the conversation already exists.
+               console.log("fromId", fromId);
+               console.log("toId", toId);
+               console.log("offeringId", offeringId);
+               qResult = await pool.query("SELECT * FROM conversations WHERE ((first_user_id = $1 AND" + 
+               " second_user_id = $2) OR (first_user_id = $2 AND second_user_id = $1)) AND offering_id = $3;", [fromId, toId, offeringId]);
+               
+               // Make a conversation if the users have never talked.
+               if (qResult.rowCount == 0) {
+                   console.log("making new conversation");
+                   qResult = await pool.query("INSERT INTO conversations(first_user_id, second_user_id" +
+                   ", first_user_username, second_user_username, offering_id) VALUES ($1, $2, $3, $4, $5);", [fromId, toId, fromUsername, toUsername, offeringId]);
+                   sendConversations(io, req.user.id, getCurrentTime());
+                   sendConversations(io, toId, getCurrentTime());
+               }
+               res.redirect('/message');
+           } else {
+               console.log("Someone is trying to make a conversation with a" 
+               + " a non-existent user.");
+               res.render('error-template', {message: 'Your request could not be completed.'});
+           }
+       } catch (err) {
+           console.log("There was some error while generating a conversation.", err);
+           res.render('error-template', {message: 'Your request could not be completed.'});
+       }
+      
+    });
     
     // Handle all events related to messaging
     io.on('connection', async function(socket) {
@@ -38,6 +75,7 @@ module.exports = function(app, io, pool, store){
                 client_user_id = session.passport.user;
                 console.log('user with client_id : ' + client_user_id + ' and socket_id ' 
                 + socket.id + ' connected');
+                // Temporary comment
                 updateOnlineStatus(io, client_user_id, false, socket);
              } else {
                 console.log("could not get details of user from session store");
@@ -49,27 +87,32 @@ module.exports = function(app, io, pool, store){
             try {
                 console.log("message-recieved :" + data);
                 data.error = false;
+                // DO NOT use the from Id sent by user !!!
                 var fromId = client_user_id;
-                var toId = data.toId;
+                var conversation_id = data.conversation_id;
                 var message = data.message;
-                var qResultSender = await pool.query("SELECT username FROM users WHERE id = $1;", [fromId]);
-                var qResultRecipient = await pool.query("SELECT username, socket_id, online FROM users WHERE id = $1;", [toId]);
-                if (qResultSender.rowCount != 1 || qResultRecipient.rowCount != 1) {
-                    console.log("[HIGH PRIORITY] An unregistered user was able "
-                    + "to connect to the server.");
-                } else {
-                    pool.query("INSERT INTO messages VALUES ($1, $2, $3);", [fromId, toId, message]);
-                    data.fromUsername = qResultSender.rows[0].username;
-                    data.toUsername = qResultRecipient.rows[0].username;
-                    data.fromId = client_user_id;
-                    if (qResultRecipient.rows[0].online == true) {
-                        console.log("recipient is online. Recipient's socket id is " + qResultRecipient.rows[0].socket_id);
-                        io.to(qResultRecipient.rows[0].socket_id).emit('new-chat-message', data);
+                var qResult = await pool.query("SELECT first_user_id," +
+                    "second_user_id FROM conversations WHERE id = $1 AND (first_user_id = $2 OR second_user_id = $2);", [conversation_id, fromId]);
+                if (qResult.rowCount == 1) {
+                    // If the conversation exists and the user is legit.
+                    var toId = (qResult.rows[0].first_user_id == fromId) ? qResult.rows[0].second_user_id : qResult.rows[0].first_user_id;
+                    pool.query("INSERT INTO messages(from_id, to_id, content, conversation_id) VALUES ($1, $2, $3, $4);", [fromId, toId, message, conversation_id],
+                                function(err, res) {
+                                    if (err) {
+                                        console.log("There was an error while inserting message into database.", err);
+                                    }
+                                });
+                    qResult = await pool.query("SELECT username, socket_id, online FROM users WHERE id = $1;", [toId]);
+                    if (qResult.rowCount == 1 && qResult.rows[0].online == true) {
+                        // If recipient is online
+                        data.fromId = fromId;
+                        console.log("recipient is online. Recipient's socket id is " + qResult.rows[0].socket_id);
+                        io.to(qResult.rows[0].socket_id).emit('new-chat-message', data);
                     }
                 }
-            } catch (err) {
-                console.log("error while handing a new message");
-                console.log(err);
+            }
+            catch (err) {
+                console.log("error while handing a new message", err);
             }
         });
         
@@ -85,21 +128,40 @@ module.exports = function(app, io, pool, store){
             });
         });
         
-        socket.on('get-conversation', async function(toId, messagesHandler) {
-            var id1 = client_user_id;
-            var id2 = toId;
+        // Get all messages of a particular conversation.
+        socket.on('get-conversation', async function(conversation_id, messagesHandler) {
             try {
-                var qResult = await pool.query("SELECT * FROM messages WHERE (from_id = $1 AND to_id = $2) OR (from_id = $2 AND to_id = $1);", [id1, id2]);
-                messagesHandler(qResult.rows);
+                var qResult = await pool.query("SELECT * from conversations" 
+                + " WHERE id = $1 AND (first_user_id = $2 OR second_user_id = $2)", [conversation_id, client_user_id]);
+                if (qResult.rowCount == 1) {
+                    qResult = await pool.query("SELECT * FROM messages"
+                    + " WHERE conversation_id = $1 ORDER BY id;", [conversation_id]);
+                    messagesHandler(qResult.rows);
+                } else {
+                    console.log(client_user_id + " was trying to access a restricted conversation");
+                }
             } catch (err) {
                 console.log("error while getting a conversation of two users ." , err);  
             }
+        });
+        
+        // Get the list of conversations of this user.
+        socket.on('get-conversation-list', async function (conversationHandler) {
+            console.log("conversation handler", conversationHandler);
+            try {
+                var qResult = await pool.query('SELECT * FROM conversations WHERE'
+                + ' first_user_id = $1 OR second_user_id = $1;', [client_user_id]);
+            } catch (err) {
+                console.log("There was an error while getting all the conversation list of " + client_user_id, err);
+            }
+            conversationHandler({ rows: qResult.rows, online_status_updated: getCurrentTime()});
         });
        
         socket.on('disconnect', async function() {
             try {
                 console.log("user disconected");
-                updateOnlineStatus(io, client_user_id, true, socket);
+                // Temporary comment
+                // updateOnlineStatus(io, client_user_id, true, socket);
             }
             catch (err) {
                 console.log('There was some error while updating online status of the user', err);
@@ -110,11 +172,8 @@ module.exports = function(app, io, pool, store){
 };
 
 var updateOnlineStatus = async function(io, client_user_id, isDisconnecting, socket) {
-    var date = new Date();
-    var time = date.getTime();
-
+    var time = getCurrentTime();
     const client = await pool.connect();
-
     try {
         await client.query('BEGIN');
         await client.query('LOCK TABLE users;');
@@ -134,13 +193,20 @@ var updateOnlineStatus = async function(io, client_user_id, isDisconnecting, soc
     finally {
         client.release();
     }
+    //sendConversations(io, client_user_id, time);
+};
 
-    var qResult;
+// Sends new conversation-list to the socket of 'user_id'.
+async function sendConversations(io, user_id, time) {
     try {
-        qResult = await pool.query('SELECT id, username, online from users;');
-        io.emit('user-list', { rows: qResult.rows, online_status_updated: time });
-    }
-    catch (err) {
+        console.log("sending conversation");
+        var qResult = await pool.query("SELECT socket_id FROM users WHERE id = $1;", [user_id]);
+        var socket_id = qResult.rows[0].socket_id;
+        qResult = await pool.query('SELECT * FROM conversations WHERE'
+            + ' first_user_id = $1 OR second_user_id = $1;', [user_id]);
+        console.log("sending user_id " + user_id + " at socket " + socket_id);
+        io.to(socket_id).emit('conversation-list', { rows: qResult.rows, online_status_updated: time});
+    } catch (err) {
         console.log("There was an error while getting user-list" +
             " information from the database", err);
     }
@@ -152,5 +218,11 @@ function isLoggedIn(req, res, next) {
         return next();
     }
     return res.redirect("/login");
+}
+
+function getCurrentTime() {
+    var date = new Date();
+    var time = date.getTime();
+    return time;
 }
 

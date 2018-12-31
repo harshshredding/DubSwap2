@@ -47,6 +47,7 @@ module.exports = function(app){
             }
             else {
                 var offeringUsername = result.rows[0].username;
+                var offeringUserId = result.rows[0].user_id;
                 var display_image = helper.convertHexToBase64(result.rows[0].image_1);
                 var other_image1 = helper.convertHexToBase64(result.rows[0].image_2);
                 var other_image2 = helper.convertHexToBase64(result.rows[0].image_3);
@@ -81,6 +82,8 @@ module.exports = function(app){
                 try {
                     var interestResults = await pool.query("SELECT COUNT(*) FROM offering_interests WHERE offering_id=$1;", [req.params.offeringID]);
                     var numberOfInterestedPeople = interestResults.rows[0].count;
+                    var sendMessageLink = 
+                      "<a href=\"/start-conversation/" + offeringUserId + "/" + req.params.offeringID + "\">Send Message</a>";
                      response.render("offering", {
                        username: req.user.username,
                        offeringUsername : offeringUsername,
@@ -89,7 +92,8 @@ module.exports = function(app){
                        description: description,
                        imagesScript: imagesScript,
                        otherImagesHTML: otherImagesHTML, 
-                       numberOfInterestedPeople: numberOfInterestedPeople
+                       numberOfInterestedPeople: numberOfInterestedPeople,
+                       sendMessageLink : sendMessageLink 
                      });
                 } catch (err) {
                    console.log("There was an error while finding the" +

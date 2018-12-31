@@ -115,19 +115,48 @@ module.exports = function(app){
         res.render("home", { username: null });
     });
     
-    // Displays the profile of the logged in user. 
-    app.get("/profile", isLoggedIn, async function(req, res, next) {
-        var username  = req.user.username;
+    // Displays the profile of the given user. 
+    app.get("/profile/:userId", isLoggedIn, async function(req, res, next) {
         try {
-            var result = await pool.query("SELECT profile_picture from users"
-            + " where username = $1;", [username]);
+            var username = req.user.username;
+            var user_id = req.params.userId;
+            var result = await pool.query("SELECT id, profile_picture, username from users"
+            + " where id = $1;", [user_id]);
+            var profile_id = result.rows[0].id;
+            var profile_username = result.rows[0].username;
             var profile_picture = helper.convertHexToBase64(result.rows[0].profile_picture);
-            res.render("profile", { username: username, profile_picture: profile_picture });
+            var sendMessageLink = 
+            "<a href=\"/start-conversation/" + profile_id + "\">Send Message</a>";
+            res.render("profile", { profile_username: profile_username,
+                                    username: username,
+                                    profile_picture: profile_picture,
+                                    sendMessageLink: sendMessageLink });
         } catch (err) {
             console.log("There was an error while fetching the profile picture for"
                    + "user : " + req.user.username);
+            res.redirect("/");
             next(err);
-            res.render("profile", { username: username, profile_picture: "" });
+            //res.render("profile", { username: username, profile_picture: "" });
+        }
+    });
+    
+    // Displays the profile of the logged in user. 
+    app.get("/profile", isLoggedIn, async function(req, res, next) {
+        try {
+            var result = await pool.query("SELECT profile_picture, username from users"
+            + " where id = $1;", [req.user.id]);
+            var username = result.rows[0].username;
+            var profile_picture = helper.convertHexToBase64(result.rows[0].profile_picture);
+            res.render("profile", { profile_username: username,
+                                    username: username,
+                                    profile_picture: profile_picture,
+                                    sendMessageLink: ''});
+        } catch (err) {
+            console.log("There was an error while fetching the profile picture for"
+                   + "user : " + req.user.username);
+            res.redirect("/");
+            next(err);
+            //res.render("profile", { username: username, profile_picture: "" });
         }
     });
     
