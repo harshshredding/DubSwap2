@@ -13,6 +13,7 @@ var express = require("express"),
     helper = require('./helper.js'),
     passportSocketIo = require("passport.socketio"),
     pgsession = require("connect-pg-simple")(session),
+    path = require("path"),
     store = new pgsession({pool : pool}); 
 var multer = require('multer');
 var path = require('path');
@@ -35,9 +36,10 @@ app.use(session({
 app.use(passport.initialize());
 
 app.use(passport.session());
-
-app.use('/public', express.static(__dirname + '/public'));
-app.use('/users', express.static(__dirname + '/users'));
+console.log(__dirname + '/public');
+var dir = path.join(__dirname, 'public');
+app.use(express.static('public'));
+// app.use('/users', express.static(__dirname + '/users'));
 
 app.set("view engine", "ejs");
 app.use(express.static("public"));
@@ -51,7 +53,7 @@ app.use(function(err, req, res, next) {
 // Boiler plate again, 
 // this starts the server
 var server = app.listen(process.env.PORT, process.env.IP, function() {
-    console.log("The server has started my dear hoho");
+    console.log("The server has started my dear hoho. Listening on port", process.env.PORT);
 });
 
 var io = require('socket.io').listen(server);

@@ -25,14 +25,33 @@
     text-align: center;
 }
 
-h1{
-    text-align: center;
-}
-
 .b{
     float: right;
 }
 
 .displayImage{
     text-align: center;
+}
+
+#price {
+    font-size: 2rem;
+}
+
+#interestedPeople {
+    float: right;
+    font-size: 1.133rem;
+    margin-top: 0.8666rem;
+}
+
+#productName {
+    padding-left: 15px;
+}
+
+#offeringOwner {
+    padding-left: 15px;
+    margin-bottom: 1rem;
+}
+
+.card {
+    border-radius: 1rem;
 }

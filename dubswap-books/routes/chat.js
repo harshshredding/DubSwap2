@@ -149,8 +149,8 @@ module.exports = function(app, io, pool, store){
         socket.on('get-conversation-list', async function (conversationHandler) {
             console.log("conversation handler", conversationHandler);
             try {
-                var qResult = await pool.query('SELECT * FROM conversations WHERE'
-                + ' first_user_id = $1 OR second_user_id = $1;', [client_user_id]);
+                var qResult = await pool.query('SELECT * FROM conversations INNER JOIN offerings ON (conversations.offering_id = offerings.offering_id) WHERE'
+            + ' conversations.first_user_id = $1 OR conversations.second_user_id = $1;', [client_user_id]);
             } catch (err) {
                 console.log("There was an error while getting all the conversation list of " + client_user_id, err);
             }
@@ -202,8 +202,8 @@ async function sendConversations(io, user_id, time) {
         console.log("sending conversation");
         var qResult = await pool.query("SELECT socket_id FROM users WHERE id = $1;", [user_id]);
         var socket_id = qResult.rows[0].socket_id;
-        qResult = await pool.query('SELECT * FROM conversations WHERE'
-            + ' first_user_id = $1 OR second_user_id = $1;', [user_id]);
+        qResult = await pool.query('SELECT * FROM conversations INNER JOIN offerings ON (conversations.offering_id = offerings.offering_id) WHERE'
+            + ' conversations.first_user_id = $1 OR conversations.second_user_id = $1;', [user_id]);
         console.log("sending user_id " + user_id + " at socket " + socket_id);
         io.to(socket_id).emit('conversation-list', { rows: qResult.rows, online_status_updated: time});
     } catch (err) {

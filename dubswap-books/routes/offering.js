@@ -46,8 +46,8 @@ module.exports = function(app){
                 response.send("Offering doesn't exist");
             }
             else {
-                var offeringUsername = result.rows[0].username;
                 var offeringUserId = result.rows[0].user_id;
+                var offeringUsername = "<a href=\"/profile/" + offeringUserId + "\">" + result.rows[0].username + "</a>";
                 var display_image = helper.convertHexToBase64(result.rows[0].image_1);
                 var other_image1 = helper.convertHexToBase64(result.rows[0].image_2);
                 var other_image2 = helper.convertHexToBase64(result.rows[0].image_3);
@@ -83,7 +83,7 @@ module.exports = function(app){
                     var interestResults = await pool.query("SELECT COUNT(*) FROM offering_interests WHERE offering_id=$1;", [req.params.offeringID]);
                     var numberOfInterestedPeople = interestResults.rows[0].count;
                     var sendMessageLink = 
-                      "<a href=\"/start-conversation/" + offeringUserId + "/" + req.params.offeringID + "\">Send Message</a>";
+                      "<a href=\"/start-conversation/" + offeringUserId + "/" + req.params.offeringID + "\" class = \"btn btn-primary card-link\" role=\"button\">Send Message To Owner</a>";
                      response.render("offering", {
                        username: req.user.username,
                        offeringUsername : offeringUsername,
@@ -93,7 +93,7 @@ module.exports = function(app){
                        imagesScript: imagesScript,
                        otherImagesHTML: otherImagesHTML, 
                        numberOfInterestedPeople: numberOfInterestedPeople,
-                       sendMessageLink : sendMessageLink 
+                       sendMessageLink : sendMessageLink
                      });
                 } catch (err) {
                    console.log("There was an error while finding the" +
@@ -152,7 +152,7 @@ module.exports = function(app){
                     imagesScript += "document.getElementById(\"offering"+ offering_id + "\").src = \"data:image/jpg;base64,\" + \"" + display_pic + "\";" ;
                 }
                 response.render("offerings", {threeImages: htmlResult,
-                imagesScript: imagesScript, username: req.user.username});
+                imagesScript: imagesScript, username: req.user.username });
             }
         });
     });

@@ -45,9 +45,9 @@
           <div></div>
           <form class="form-inline my-2 my-lg-0">
            <% if(username != null){ %>
-            
-            <a href="/message" class="btn btn-outline-success my-2 my-sm-0" id="sign-in-button" type="submit">Messages</a>
-            <a href="/offerings" class="btn btn-outline-success my-2 my-sm-0" id="sign-in-button" type="submit">My Offerings</a>
+            <a href="/addOffering" class="btn btn-outline-success my-2 my-sm-0 webkit" id="sign-in-button" type="submit">Add Offering</a>
+            <a href="/offerings" class="btn btn-outline-secondary my-2 my-sm-0 webkit" id="sign-in-button" type="submit">My Offerings</a>
+            <a href="/message" class="btn btn-primary my-2 my-sm-0 webkit" id="sign-in-button" type="submit">Messages</a>
             <a href="\profile" id="menu-id-div"><%= username %></a>
             <div class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -59,8 +59,8 @@
               </div>
             </div>
             <% }else{ %>
-                <a href="/login" class="btn btn-outline-success my-2 my-sm-0" id="sign-in-button" type="submit">Sign In</a>
-                <a href="/register" class="btn btn-outline-success my-2 my-sm-0" id="sign-up-button" type="submit">Sign Up</a>
+                <a href="/login" class="btn btn-outline-success my-2 my-sm-0 webkit" id="sign-in-button" type="submit">Sign In</a>
+                <a href="/register" class="btn btn-outline-success my-2 my-sm-0 webkit" id="sign-up-button" type="submit">Sign Up</a>
             <% } %>
           </form>
           

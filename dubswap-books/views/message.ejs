@@ -80,12 +80,19 @@
         // } else {
         //   online_icon = online_icon.addClass('dot-offline');
         // }
+        var offering_item_name = rows[i].item;
+        var offering_item_element = $('<span>')
+                                    .text(offering_item_name)
+                                    .addClass('badge')
+                                    .addClass('badge-light')
+                                    .addClass('offering-item');
         
         // Make list element.
         var list_element = $('<a>')
             .addClass('user-list-item')
             .append(online_icon)
             .append('  ' + toUsername)
+            .append(offering_item_element)
             .addClass('list-group-item')
             .attr('id', 'conversation' + conversation_id)
             .attr('href', '#')
