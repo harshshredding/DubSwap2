@@ -25,13 +25,12 @@
   </div>
 </div>
 
-
+<% include partials/globalSocketIO %>
 <!-- Javascript -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.slim.js"></script>
 <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
 <script>
   // Make a stable connection with the server
-  var socket = io();
+  //var socket = io();
   // Set the time last time online status was updated to a low enough value.
   var online_status_update_time = 0;
   // Get username of this user.
@@ -67,7 +66,19 @@
       $('#user-list').empty();
       
       for (var i = 0; i < rows.length; i++) {
-        var conversation_id = rows[i].id;
+        var row = rows[i];
+        var conversation_id = row.id;
+        var new_message = false;
+        // Determine whether a new message has been received.
+        if (row.first_user_id == user_id) {
+            if (row.last_seen_first_user < row.last_seen_second_user) {
+                new_message = true;
+            }
+        } else {
+            if (row.last_seen_second_user < row.last_seen_first_user) {
+                new_message = true;
+            }
+        }
         var toUsername;
         if (rows[i].first_user_id == user_id) {
           toUsername = rows[i].second_user_username;
@@ -86,20 +97,31 @@
                                     .addClass('badge')
                                     .addClass('badge-light')
                                     .addClass('offering-item');
-        
+        var new_message_badge = $('<span>')
+                                 .addClass('badge')
+                                 .addClass('badge-secondary')
+                                 .addClass('new-message-badge')
+                                 .attr('id', 'new-message-badge' + conversation_id);
+        // If a new message was received, tag the conversation field.                         
+        if (new_message) {
+          new_message_badge.text('new');
+        }
+                                 
         // Make list element.
         var list_element = $('<a>')
             .addClass('user-list-item')
             .append(online_icon)
             .append('  ' + toUsername)
             .append(offering_item_element)
+            .append(new_message_badge)
             .addClass('list-group-item')
             .attr('id', 'conversation' + conversation_id)
             .attr('href', '#')
-            // when user clicks the user item
+            // when user clicks the conversation item
             .click(rows, function() {
               // change selected conversation.
               selected_conversation = this.id.substring(12, this.id.length);
+              $('#' + 'new-message-badge' + selected_conversation).text("");
               highlight(this);
               console.log('conversation with id '+ this.id +' was clicked');
               // Ask for the conversation(messages) between this user and
@@ -150,7 +172,7 @@
   //  This event represents a new chat message sent by a user.
   socket.on('new-chat-message', function(data) {
     console.log("handling new message from " + data.fromId);
-    $('#' + 'conversation' + data.conversation_id).append(' new message');
+    $('#' + 'new-message-badge' + data.conversation_id).text("new");
     // Only display new message if you have the corresponding conversation
     // screen open.
     if (selected_conversation == data.conversation_id) {

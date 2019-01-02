@@ -16,7 +16,7 @@ var fs = require('fs');
 var mkdirp = require('mkdirp');
 var elasticClient = require("../elasticsearch/connection.js");
 
-module.exports = function(app){
+module.exports = function(app) {
     // renders registration page
     app.get("/register", function(req, res) {
         res.render("register", { alreadyExists: false });

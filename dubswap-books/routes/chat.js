@@ -100,19 +100,57 @@ module.exports = function(app, io, pool, store){
                                 function(err, res) {
                                     if (err) {
                                         console.log("There was an error while inserting message into database.", err);
+                                    } else {
+                                      // Record in the database that this user has seen this message.
+                                      updateLastSeenState(conversation_id, client_user_id);
                                     }
                                 });
                     qResult = await pool.query("SELECT username, socket_id, online FROM users WHERE id = $1;", [toId]);
-                    if (qResult.rowCount == 1 && qResult.rows[0].online == true) {
-                        // If recipient is online
-                        data.fromId = fromId;
-                        console.log("recipient is online. Recipient's socket id is " + qResult.rows[0].socket_id);
-                        io.to(qResult.rows[0].socket_id).emit('new-chat-message', data);
+                    if (qResult.rowCount == 1) {
+                        // If the recipient exists.
+                        // Ask recipient to check for new notification in the database
+                        // and don't wait for him to be online (Let us be on the
+                        // safer side).
+                        io.to(qResult.rows[0].socket_id).emit('check-for-notification');
+                        if (qResult.rows[0].online == true) {
+                            // If recipient is online he automatically noticies
+                            // the messages, so update seen state in database for recipient.
+                            // updateLastSeenState(conversation_id, toId);
+                            data.fromId = fromId;
+                            console.log("recipient is online. Recipient's socket id is " + qResult.rows[0].socket_id);
+                            io.to(qResult.rows[0].socket_id).emit('new-chat-message', data);
+                        }
                     }
                 }
             }
             catch (err) {
                 console.log("error while handing a new message", err);
+            }
+        });
+        
+        // Calculate the number of message notifications for this user.
+        socket.on('number-of-new-messages', async function(newMessagesHandler) {
+            console.log("someone asked for number of messages");
+            try {
+                var qResult = await pool.query("SELECT * from conversations WHERE first_user_id = $1 OR second_user_id = $1;", [client_user_id]);
+                var notificationCount = 0;
+                for (var i = 0; i < qResult.rowCount; i++) {
+                    var row = qResult.rows[i];
+                    if (row.first_user_id == client_user_id) {
+                        if (row.last_seen_first_user < row.last_seen_second_user) {
+                            notificationCount += row.last_seen_second_user - row.last_seen_first_user;
+                        }
+                    } else {
+                        if (row.last_seen_second_user < row.last_seen_first_user) {
+                            notificationCount += row.last_seen_first_user - row.last_seen_second_user;
+                        }
+                    }
+                }
+                if (notificationCount > 0) {
+                    newMessagesHandler(notificationCount);
+                }
+            } catch (err) {
+                console.log("Problem in finding the number of message notifications.", err);
             }
         });
         
@@ -134,8 +172,10 @@ module.exports = function(app, io, pool, store){
                 var qResult = await pool.query("SELECT * from conversations" 
                 + " WHERE id = $1 AND (first_user_id = $2 OR second_user_id = $2)", [conversation_id, client_user_id]);
                 if (qResult.rowCount == 1) {
+                    updateLastSeenState(conversation_id, client_user_id);
                     qResult = await pool.query("SELECT * FROM messages"
                     + " WHERE conversation_id = $1 ORDER BY id;", [conversation_id]);
+                    
                     messagesHandler(qResult.rows);
                 } else {
                     console.log(client_user_id + " was trying to access a restricted conversation");
@@ -156,7 +196,8 @@ module.exports = function(app, io, pool, store){
             }
             conversationHandler({ rows: qResult.rows, online_status_updated: getCurrentTime()});
         });
-       
+        
+        // Log when user disconnects.
         socket.on('disconnect', async function() {
             try {
                 console.log("user disconected");
@@ -167,7 +208,6 @@ module.exports = function(app, io, pool, store){
                 console.log('There was some error while updating online status of the user', err);
             }
         });
-    
     });
 };
 
@@ -226,3 +266,29 @@ function getCurrentTime() {
     return time;
 }
 
+async function updateLastSeenState(conversation_id, client_user_id) {
+    var qResult = await pool.query("SELECT * from conversations" 
+                + " WHERE id = $1 AND (first_user_id = $2 OR second_user_id = $2)", [conversation_id, client_user_id]);
+    if (qResult.rowCount == 1) {
+        var lastSeenField;
+        // Determine which last seen field we should update.
+        if (qResult.rows[0].first_user_id == client_user_id) {
+            lastSeenField = "last_seen_first_user";
+        } else {
+            lastSeenField = "last_seen_second_user";
+        }
+        pool.query("UPDATE conversations AS c"
+                        + " SET " + lastSeenField + " = r.max"
+                        + " FROM (SELECT MAX(id), conversation_id FROM messages GROUP BY conversation_id) AS r"
+                        + " WHERE c.id = r.conversation_id AND c.id = $1;"
+                        , [conversation_id]
+                        , function (err, res) {
+                            if (err) {
+                                console.log("Failed to update last_viewed state.", err);
+                            }
+                        });
+    } else {
+        console.log(client_user_id + " is trying to access a conversation he "
+        + "is not authorized to see.");
+    }
+}

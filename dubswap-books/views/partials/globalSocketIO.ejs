@@ -1,0 +1,18 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.slim.js"></script>
+<script>
+    //Make a stable connection with the server
+    var socket = io();
+    
+    // Get the number of new messages and display the presence of new messages
+    // to the user.
+    socket.emit('number-of-new-messages', function (numberOfMessages) {
+        $('#numOfMessagesBadge').text("new");
+    });
+    
+    // When the server notifies of a potentially new unseen message in the database.
+    socket.on('check-for-notification', function() {
+        socket.emit('number-of-new-messages', function (numberOfMessages) {
+            $('#numOfMessagesBadge').text("new");
+        });
+    });
+</script>

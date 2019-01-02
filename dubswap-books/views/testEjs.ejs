@@ -1,28 +1,5 @@
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 <html>
-    <head>
-       
-    </head>
-   
-    <body>
-        <button id ='submit-button'>click</button>
-        <img id="ItemPreview" src="" />
-        
-    </body>
-    
-    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
-    <script>
-        $('#submit-button').click(function() {
-            $.ajax({
-                url: '/offering-interests/1',
-                type: 'POST',
-                data: {
-                    email: 'email@example.com',
-                    message: 'hello world!'
-                },
-                success: function(msg) {
-                    alert('Email Sent');
-                }               
-            });
-        });
-    </script>
+    <h1>The Heading</h1>
+    <p> This is a paragraph</p>
 </html>

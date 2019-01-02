@@ -111,7 +111,7 @@ module.exports = function(app){
 
 
     // The default home without current-user specific info.
-    app.get("/home", function(req, res) {
+    app.get("/home", async function(req, res, next) {
         res.render("home", { username: null });
     });
     
@@ -138,6 +138,10 @@ module.exports = function(app){
             next(err);
             //res.render("profile", { username: username, profile_picture: "" });
         }
+    });
+    
+    app.get("/test", function(req, res, next) {
+        res.render("testEjs");
     });
     
     // Displays the profile of the logged in user. 

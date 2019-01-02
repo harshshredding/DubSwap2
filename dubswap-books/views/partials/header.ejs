@@ -37,7 +37,7 @@
             <li class="nav-item">
               <form class="form-inline" action="/search" method="GET">
                 <input name="query" class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
-                <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+                <button class="btn btn-outline-dark my-2 my-sm-0" type="submit">Search</button>
               </form>
             </li>
           </ul>
@@ -47,7 +47,10 @@
            <% if(username != null){ %>
             <a href="/addOffering" class="btn btn-outline-success my-2 my-sm-0 webkit" id="sign-in-button" type="submit">Add Offering</a>
             <a href="/offerings" class="btn btn-outline-secondary my-2 my-sm-0 webkit" id="sign-in-button" type="submit">My Offerings</a>
-            <a href="/message" class="btn btn-primary my-2 my-sm-0 webkit" id="sign-in-button" type="submit">Messages</a>
+            <a href="/message" class="btn btn-primary my-2 my-sm-0 webkit" id="sign-in-button" type="submit">
+              Messages
+              <span class="badge badge-light" id="numOfMessagesBadge"></span>
+            </a>
             <a href="\profile" id="menu-id-div"><%= username %></a>
             <div class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

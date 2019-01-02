@@ -11,27 +11,32 @@
                         <%= 'User already exists'%>    
                         <% } %>
                     </div>
+                    <div class="form-group">
+                        <label for="email"><b>Email</b></label>
+                        <input type="text" class="form-control" name="email" placeholder="Email"><br>
+                    </div>
+                    <div class="form-group">
+                        <label for="firstname"><b>First Name</b></label>
+                        <input type="text" class="form-control" name="firstname" placeholder="First Name"><br>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastname"><b>Last Name</b></label>
+                        <input type="text" class="form-control" name="lastname" placeholder="Last Name"><br>
+                    </div>
+                    <div class="form-group">
+                        <label for="uname"><b>UW net-id</b></label>
+                        <input type="text" class="form-control" name="username" placeholder="usrname"><br>
+                    </div>
+                    <div class="form-group">
+                        <label for="psw"><b>Password</b></label>
+                        <input type="password" class="form-control" name="password" id="password" placeholder="password" onkeyup='check();'><br>
+                    </div>
                     
-                    <label for="email"><b>Email</b></label>
-                    <input type="text" name="email" placeholder="Email"><br>
-                    
-                    <label for="firstname"><b>First Name</b></label>
-                    <input type="text" name="firstname" placeholder="First Name"><br>
-                    
-                    <label for="lastname"><b>Last Name</b></label>
-                    <input type="text" name="lastname" placeholder="Last Name"><br>
-                    
-                    <label for="uname"><b>UW net-id</b></label>
-                    <input type="text" name="username" placeholder="usrname"><br>
-                    
-                    <label for="psw"><b>Password</b></label>
-                    <input type="password" name="password" id="password" placeholder="password" onkeyup='check();'><br>
-                    
-                    <span id="confirm-password">
+                    <div class="form-group">
                         <label for="psw"><b>Confirm Password</b></label>
-                        <input type="password" name="password2" id="confirm_password" placeholder="password" onkeyup='check();'><br>
+                        <input type="password" class="form-control" name="password2" id="confirm_password" placeholder="password" onkeyup='check();'><br>
                         <div id="message"></div>
-                    </span>
+                    </div>
                     <div id="forgot-password"><a href="\forgotPassword\requestChange">forgot password</a></div>
                     <button class="btn btn-primary" id="submit-button">Submit</button>
                 </form>
@@ -55,5 +60,7 @@
               }
             }
         </script>
+        
+<% include partials/globalSocketIO %>
 <% include partials/footer %>
     

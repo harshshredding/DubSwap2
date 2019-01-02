@@ -1,49 +1,66 @@
 <% include partials/header %>
       
 <link rel="stylesheet" href="/stylesheets/global.css">
-
+<link rel="stylesheet" href="/stylesheets/addOffering.css">
 
 <div class="container">
   <form action="/addOffering" method="POST" enctype="multipart/form-data">
 
-      
-      <label for="itemName"><b>Item name</b></label>
-      <input type="text" name="itemName" placeholder=""><br>
-      
-      <label for="Price"><b>rent per month</b></label>
-      <input type="text" name="price" placeholder=""><br>
-      
-      <label for="itemType"><b>Item type</b></label>
-      <input type="text" name="itemType" placeholder=""><br>
-      
-      <label for="itemModel"><b>Author/model</b></label>
-      <input type="text" name="itemModel" id="password" placeholder=""><br><br>
-      
-      <label for="comment"><b>Item description<b></label>
-      <textarea class="form-control" rows="5" id="comment" name="description" placeholder=""></textarea><br><br>
-      
-      <label for="displayPicture"><b>Upload Display Picture</b></label>
-      <input type='file' name='dp' onchange="readUrlDp(this);"/>
-      <div>
-      <img id="div-dp" src="#" alt="your image" />
+      <div class="form-group">
+          <label for="itemName"><b>Item name</b></label>
+          <input type="text" class="form-control" name="itemName" placeholder=""><br>
       </div>
       
-      <label for="displayPicture"><b>Image Angle 1</b></label>
-      <input type='file' name='img1' onchange="readUrlImg1(this);"/>
-      <div>
-      <img id="div-img1" src="#" alt="your image" />
+      <div class="form-group">
+          <label for="Price"><b>rent per month</b></label>
+          <input type="text" class="form-control" name="price" placeholder=""><br>
       </div>
       
-      <label for="displayPicture"><b>Image Angle 2</b></label>
-      <input type='file' name='img2' onchange="readUrlImg2(this);"/>
-      <div>
-      <img id="div-img2" src="#" alt="your image" />
+      <div class="form-group">
+          <label for="itemType"><b>Item type</b></label>
+          <input type="text" class="form-control" name="itemType" placeholder=""><br>
       </div>
       
-      <label for="displayPicture"><b>Image Angle 3</b></label>
-      <input type='file' name='img3' onchange="readUrlImg3(this);"/>
+      <div class="form-group">
+          <label for="itemModel"><b>Author/model</b></label>
+          <input type="text" class="form-control" name="itemModel" id="password" placeholder=""><br><br>
+      </div>
+      
+      <div class="form-group">
+          <label for="comment"><b>Item description<b></label>
+          <textarea class="form-control" rows="5" id="comment" name="description" placeholder=""></textarea><br><br>
+      </div>
+      
+      <div class="form-group">
+          <label for="displayPicture"><b>Upload Display Picture</b></label>
+          <input type='file' class="form-control" name='dp' onchange="readUrlDp(this);"/>
+      </div>
       <div>
-      <img id="div-img3" src="#" alt="your image" />
+      <img id="div-dp" class="image-preview" src="#" alt="preview" />
+      </div>
+      
+      <div class="form-group">
+          <label for="displayPicture"><b>Image Angle 1</b></label>
+          <input type='file' class="form-control" name='img1' onchange="readUrlImg1(this);"/>
+      </div>
+      <div>
+      <img id="div-img1" class="image-preview" src="#" alt="preview" />
+      </div>
+      
+      <div class="form-group">
+          <label for="displayPicture"><b>Image Angle 2</b></label>
+          <input type='file' class="form-control" name='img2' onchange="readUrlImg2(this);"/>
+      </div>
+      <div>
+      <img id="div-img2" class="image-preview" src="#" alt="preview" />
+      </div>
+      
+      <div class="form-group">
+          <label for="displayPicture"><b>Image Angle 3</b></label>
+          <input type='file' class="form-control" name='img3' onchange="readUrlImg3(this);"/>
+      </div>
+      <div>
+      <img id="div-img3" class="image-preview" src="#" alt="preview" />
       </div>
       
        <!--<label for="threePictures"><b>3 More pictures</b></label>-->
@@ -149,5 +166,5 @@
       </script>
   
 </div>
-
+<% include partials/globalSocketIO %>
 <% include partials/footer %>
