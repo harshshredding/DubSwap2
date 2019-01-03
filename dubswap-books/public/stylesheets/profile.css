@@ -1,7 +1,7 @@
 body, html {
     height: 100%;
     background-repeat: no-repeat;
-    background-image: linear-gradient(rgb(104, 145, 162), rgb(12, 97, 33));
+    /*background-image: linear-gradient(rgb(104, 145, 162), rgb(12, 97, 33));*/
 }
 /**
  * Profile image component
@@ -38,4 +38,8 @@ body, html {
     background-color: rgb(81, 210, 183);
     padding: 5px 10px 5px 10px;
     border-radius: 27px;
+}
+
+.send-message-div {
+    text-align: center;
 }

@@ -160,7 +160,7 @@ module.exports = function(app){
     
     
     app.get("/addOffering", isLoggedIn, function(req, res) {
-        res.render("addOffering");
+        res.render("addOffering", {username: req.user.username});
     });
     
     // Adds the given offering to the market. 
@@ -226,7 +226,7 @@ module.exports = function(app){
                             console.log(resp);
                         }
                     });
-                    res.send("hola ! Offering was successfully stored");
+                    res.render("message-template", {message: "Your offering was succesfully added to the market."});
                 }
             });
     });

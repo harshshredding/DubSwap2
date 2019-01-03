@@ -54,11 +54,11 @@ module.exports = function(app, io, pool, store){
            } else {
                console.log("Someone is trying to make a conversation with a" 
                + " a non-existent user.");
-               res.render('error-template', {message: 'Your request could not be completed.'});
+               res.render('message-template', {message: 'Your request could not be completed.'});
            }
        } catch (err) {
            console.log("There was some error while generating a conversation.", err);
-           res.render('error-template', {message: 'Your request could not be completed.'});
+           res.render('message-template', {message: 'Your request could not be completed.'});
        }
       
     });

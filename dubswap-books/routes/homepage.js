@@ -47,7 +47,7 @@ module.exports = function(app){
         // Get the details of the four most recent offerings from the database.
         var offerings;
         try {
-            offerings = await pool.query("SELECT item, image_1, price, offering_id from offerings ORDER BY time_stamp DESC limit 4;");
+            offerings = await pool.query("SELECT item, image_1, price, offering_id from offerings ORDER BY time_stamp DESC;");
         } catch (err) {
             console.log("there was an error while getting the most recent offerings on the homepage.");
             next(err);
@@ -126,11 +126,12 @@ module.exports = function(app){
             var profile_username = result.rows[0].username;
             var profile_picture = helper.convertHexToBase64(result.rows[0].profile_picture);
             var sendMessageLink = 
-            "<a href=\"/start-conversation/" + profile_id + "\">Send Message</a>";
+            "<a href=\"/start-conversation/" + profile_id + "\" class=\"btn btn-primary btn-lg active\" role=\"button\">Send Message</a>";
             res.render("profile", { profile_username: profile_username,
                                     username: username,
                                     profile_picture: profile_picture,
-                                    sendMessageLink: sendMessageLink });
+                                    sendMessageLink: sendMessageLink,
+                                    myOwnProfile: false});
         } catch (err) {
             console.log("There was an error while fetching the profile picture for"
                    + "user : " + req.user.username);
@@ -154,7 +155,9 @@ module.exports = function(app){
             res.render("profile", { profile_username: username,
                                     username: username,
                                     profile_picture: profile_picture,
-                                    sendMessageLink: ''});
+                                    sendMessageLink: '',
+                                    myOwnProfile: true
+                                  });
         } catch (err) {
             console.log("There was an error while fetching the profile picture for"
                    + "user : " + req.user.username);
