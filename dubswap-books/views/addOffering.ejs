@@ -4,44 +4,48 @@
 <link rel="stylesheet" href="/stylesheets/addOffering.css">
 
 <div class="container">
-  <form action="/addOffering" method="POST" enctype="multipart/form-data">
+  <form action="/addOffering" method="POST" enctype="multipart/form-data" id="offering-form">
 
       <div class="form-group">
-          <label for="itemName"><b>Item name</b></label>
-          <input type="text" class="form-control" name="itemName" placeholder=""><br>
+          <label for="itemName"><b>Item title</b></label>
+          <input type="text" class="form-control" name="itemName" id="itemName" placeholder="" required><br>
       </div>
       
       <div class="form-group">
-          <label for="Price"><b>rent per month</b></label>
-          <input type="text" class="form-control" name="price" placeholder=""><br>
+          <label for="price"><b>Price / Rent Per Month</b></label>
+          <input type="text" class="form-control" name="price" id="price" placeholder="" required><br>
+          <p id = "price-error" style="color:red"></p>
       </div>
       
       <div class="form-group">
           <label for="itemType"><b>Item type</b></label>
-          <input type="text" class="form-control" name="itemType" placeholder=""><br>
+          <input type="text" class="form-control" name="itemType" id="itemType" placeholder=""><br>
       </div>
       
       <div class="form-group">
-          <label for="itemModel"><b>Author/model</b></label>
-          <input type="text" class="form-control" name="itemModel" id="password" placeholder=""><br><br>
+          <label for="itemModel"><b>Subtitle</b></label>
+          <input type="text" class="form-control" name="itemModel" id="itemModel" placeholder=""><br><br>
       </div>
       
       <div class="form-group">
-          <label for="comment"><b>Item description<b></label>
-          <textarea class="form-control" rows="5" id="comment" name="description" placeholder=""></textarea><br><br>
+          <label for="description"><b>Item description<b></label>
+          <textarea class="form-control" rows="5" id="description" name="description" placeholder=""></textarea><br><br>
       </div>
       
       <div class="form-group">
           <label for="displayPicture"><b>Upload Display Picture</b></label>
-          <input type='file' class="form-control" name='dp' onchange="readUrlDp(this);"/>
+          <input type='file' class="form-control" name='dp' id='dp' onchange="readUrlDp(this);"/>
+          <p id = "dp-error" style="color:red"></p>
       </div>
+      
       <div>
       <img id="div-dp" class="image-preview" src="#" alt="preview" />
       </div>
       
       <div class="form-group">
           <label for="displayPicture"><b>Image Angle 1</b></label>
-          <input type='file' class="form-control" name='img1' onchange="readUrlImg1(this);"/>
+          <input type='file' class="form-control" name='img1' id='img1' onchange="readUrlImg1(this);"/>
+          <p id = "img1-error" style="color:red"></p>
       </div>
       <div>
       <img id="div-img1" class="image-preview" src="#" alt="preview" />
@@ -49,15 +53,17 @@
       
       <div class="form-group">
           <label for="displayPicture"><b>Image Angle 2</b></label>
-          <input type='file' class="form-control" name='img2' onchange="readUrlImg2(this);"/>
+          <input type='file' class="form-control" name='img2' id='img2' onchange="readUrlImg2(this);"/>
+          <p id = "img2-error" style="color:red"></p>
       </div>
       <div>
-      <img id="div-img2" class="image-preview" src="#" alt="preview" />
+      <img id="div-img2" class="image-preview" src="#" alt="preview" required/>
       </div>
       
       <div class="form-group">
           <label for="displayPicture"><b>Image Angle 3</b></label>
-          <input type='file' class="form-control" name='img3' onchange="readUrlImg3(this);"/>
+          <input type='file' class="form-control" name='img3' id='img3' onchange="readUrlImg3(this);"/>
+          <p id = "img3-error" style="color:red"></p>
       </div>
       <div>
       <img id="div-img3" class="image-preview" src="#" alt="preview" />
@@ -131,39 +137,48 @@
           }
       }
       
-      // function previewFiles() {
+function isNotNumber(text) {
+    return isNaN(text);
+}
 
-      //       var preview = document.querySelector('#preview');
-      //       var files   = document.querySelector('#files').files;
-      //       console.log(files.length);
-          
-      //       function readAndPreview(file) {
-          
-      //         // Make sure `file.name` matches our extensions criteria
-              
-      //           var reader = new FileReader();
-          
-      //           reader.addEventListener("load", function () {
-      //             var image = new Image();
-                  
-      //             image.title = file.name;
-      //             image.src = this.result;
-                  
-      //             image.style.width = "33%";
-      //             image.style.padding = "10px";
-                  
-      //             preview.appendChild( image );
-      //           }, false);
-          
-      //           reader.readAsDataURL(file);
-      //       }
-          
-      //       if (files) {
-      //         [].forEach.call(files, readAndPreview);
-      //       }
+function isImageUploaded(imageName) {
+    if (document.getElementById(imageName).files.length == 0) {
+       nameError = "Please Upload Display Image";
+       document.getElementById(imageName + "-error").innerHTML = nameError;
+       return false;
+    } else {
+       document.getElementById(imageName + "-error").innerHTML = '';
+    }
+    return true;
+}
 
-      //   }
-      </script>
+document.getElementById("offering-form").onsubmit = function () {
+    
+    var price = document.forms["offering-form"]["price"].value;
+
+    var submit = true;
+
+    if (price == null || price == "" || isNotNumber(price)) {
+        nameError = "Invalid Price";
+        document.getElementById("price-error").innerHTML = nameError;
+        submit = false;
+    }
+    // Check whether all four images have been uploaded.
+    // If not, show the error beneath the input.
+    submit = isImageUploaded('dp');
+    submit = isImageUploaded('img1') && submit;
+    submit = isImageUploaded('img2') && submit;
+    submit = isImageUploaded('img3') && submit;
+    return submit;
+}
+
+function removeWarning() {
+    document.getElementById(this.id + "-error").innerHTML = "";
+}
+
+document.getElementById("price").onkeyup = removeWarning;
+document.getElementById("dp").onkeyup = removeWarning;
+</script>
   
 </div>
 <% include partials/globalSocketIO %>

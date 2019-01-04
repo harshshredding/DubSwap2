@@ -184,6 +184,10 @@ module.exports = function(app){
             var itemType = req.body.itemType;
             var itemModel = req.body.itemModel;
             var price = parseInt(req.body.price, 10);
+            if (isNaN(price)) {
+                res.render("message-template", {message: "Price cannot be a non-number. Please fill the form again."});
+                return;
+            }
             var description = req.body.description;
             
             var pic_1 = null; // This is the display picture
