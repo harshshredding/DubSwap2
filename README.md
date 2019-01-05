@@ -14,14 +14,23 @@ DubSwap is an internal college applicaton(this can change) with two objectives :
 * The project is in its early stages, so it should be easy to jump in with my help, and hopefully I have written clean code.
 
 ## How to Contribute ? ##
-### On Mac ###
-Find a sparkling clearn directory and pull in the repo
-`git clone https://github.com/harshshredding/DubSwap2.git`
+### On Mac (it shouldn't be hard to find Windows counterparts) ###
+Find a sparkling clearn directory and pull in the repo <br>
+`git clone https://github.com/harshshredding/DubSwap2.git` <br>
 Install Node using Homebrew <br>
 `brew install node` <br>
 Install Postgres <br>
 `brew intall postgres` <br>
 [Visit this link to learn about how to start, quit, and configure postgres to allow all local connections](https://stackoverflow.com/questions/7975556/how-to-start-postgresql-server-on-mac-os-x) <br>
+Then will will create a database called dubswap. <br>
+`CREATE DATABASE dubswap;`
+Then we will add users called `ubuntu` and `postgres` to the database and give them super priviledge. <br>
+`CREATE USER ubuntu SUPERUSER;` <br>
+`CREATE USER postgres SUPERUSER;` <br>
+Then we will import all the tables in the database from the backup-file. <br>
+In the repository do <br>
+`psql dubswap < DubSwap2/dubswap-books/db/dubswap_backup.sql` <br>
+You should not see any errors popping up <br>
 Install ElasticSearch <br>
 `brew install elasticsearch` <br>
 
