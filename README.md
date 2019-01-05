@@ -22,18 +22,24 @@ Install Node using Homebrew <br>
 Install Postgres <br>
 `brew intall postgres` <br>
 [Visit this link to learn about how to start, quit, and configure postgres to allow all local connections](https://stackoverflow.com/questions/7975556/how-to-start-postgresql-server-on-mac-os-x) <br>
+Install ElasticSearch <br>
+`brew install elasticsearch` <br>
+Restart our services <br>
+`brew services restart postgres` <br>
+`brew services restart elasticsearch` <br>
 Then will will create a database called dubswap. <br>
-`CREATE DATABASE dubswap;`
+`CREATE DATABASE dubswap;` <br>
 Then we will add users called `ubuntu` and `postgres` to the database and give them super priviledge. <br>
 `CREATE USER ubuntu SUPERUSER;` <br>
 `CREATE USER postgres SUPERUSER;` <br>
-Then we will import all the tables in the database from the backup-file. <br>
-In the repository do <br>
+`ALTER USER ubuntu WITH PASSWORD 'my_password';` <br>
+`ALTER USER postgres WITH PASSWORD 'postgres';` <br>
+Then well open `db\db-module.js` and modify the connection-string to include password of ubuntu that we set above. <br>
+Then we will import all the tables in the database from the backup-file. <br> For this, in the repository do: <br>
 `psql dubswap < DubSwap2/dubswap-books/db/dubswap_backup.sql` <br>
-You should not see any errors popping up <br>
-Install ElasticSearch <br>
-`brew install elasticsearch` <br>
-
+You should not see any errors in the output <br>
+Then we are ready to start our application by running `node app.js` in the folder `dubswap-books` <br>
+Then go to the browser to check if you can see the website ! <br>
 ## Case for the book trading feature ##
 College communities are different than other communities. People in college form a network that is densely connected, and college students work in close proximities. Hence, a delivery system should not be necessary for a trading market involving college students, making it easier to reduce prices of goods for everyone's benefit. Also, since college students tend to be *well behaved*, there is a low chance of getting cheated by another college student during a trade.
 
