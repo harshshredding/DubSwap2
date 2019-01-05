@@ -15,11 +15,13 @@ DubSwap is an internal college applicaton(this can change) with two objectives :
 
 ## How to Contribute ? ##
 ### On Mac ###
+Find a sparkling clearn directory and pull in the repo
+`git clone https://github.com/harshshredding/DubSwap2.git`
 Install Node using Homebrew <br>
 `brew install node` <br>
 Install Postgres <br>
-[Visit this link to learn about how to start, quit, and configure postgres to allow all local connections](https://stackoverflow.com/questions/7975556/how-to-start-postgresql-server-on-mac-os-x)
 `brew intall postgres` <br>
+[Visit this link to learn about how to start, quit, and configure postgres to allow all local connections](https://stackoverflow.com/questions/7975556/how-to-start-postgresql-server-on-mac-os-x) <br>
 Install ElasticSearch <br>
 `brew install elasticsearch` <br>
 
