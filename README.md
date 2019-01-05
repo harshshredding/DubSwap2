@@ -15,12 +15,13 @@ DubSwap is an internal college applicaton(this can change) with two objectives :
 
 ## How to Contribute ? ##
 ### On Mac ###
-Install Node using Homebrew
-`brew install node`
-Install Postgres
-`brew intall postgres`
-Install ElasticSearch
-`brew install elasticsearch`
+Install Node using Homebrew <br>
+`brew install node` <br>
+Install Postgres <br>
+[Visit this link to learn about how to start, quit, and configure postgres to allow all local connections](https://stackoverflow.com/questions/7975556/how-to-start-postgresql-server-on-mac-os-x)
+`brew intall postgres` <br>
+Install ElasticSearch <br>
+`brew install elasticsearch` <br>
 
 ## Case for the book trading feature ##
 College communities are different than other communities. People in college form a network that is densely connected, and college students work in close proximities. Hence, a delivery system should not be necessary for a trading market involving college students, making it easier to reduce prices of goods for everyone's benefit. Also, since college students tend to be *well behaved*, there is a low chance of getting cheated by another college student during a trade.
