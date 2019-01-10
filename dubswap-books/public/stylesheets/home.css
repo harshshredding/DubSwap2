@@ -13,7 +13,7 @@ img{
 
 
 .product{
-    height: 400px;
+    /*height: 400px;*/
     margin-bottom: 20px;
 }
 
@@ -21,29 +21,26 @@ img{
     height: 70%;
 }
 
-.card-text{
-    height:30%;
-    background-color: white;
-    border: 1px solid #d2daed;
-    margin-bottom: 1rem;
-}
+/*.card-text{*/
+/*    height:30%;*/
+/*    background-color: white;*/
+/*    border: 1px solid #d2daed;*/
+/*    margin-bottom: 1rem;*/
+/*}*/
 
-.cart-button-container{
-    text-align: center;
-}
+/*.cart-button-container{*/
+/*    text-align: center;*/
+/*}*/
 
-.card-item{
-    padding:0.2rem;
-    height:33%;
-    padding-left:0.5rem;
-}
-
-
+/*.card-item{*/
+/*    padding:0.2rem;*/
+/*    height:33%;*/
+/*    padding-left:0.5rem;*/
+/*}*/
 
 .carousel-container{
     margin-top: 2rem;
 }
-
 
 .weird{
     color: red;
@@ -52,4 +49,3 @@ img{
 .headingDiv{
     height:200px;
 }
-

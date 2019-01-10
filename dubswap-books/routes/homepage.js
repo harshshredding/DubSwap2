@@ -59,15 +59,27 @@ module.exports = function(app){
             var image = helper.convertHexToBase64(offerings.rows[i].image_1);
             var item = offerings.rows[i].item;
             var offering_id = offerings.rows[i].offering_id;
+            // offeringsHTML +=
+            //     "<div class='product col-sm-3'>" +
+            //     "<a href = 'offering/" + offering_id + "'>" +
+            //     "<img src = '' id='offering" + i + "'>" +
+            //     "</a>" +
+            //     "<div class='d-flex flex-column card-text'>" +
+            //     "<div class='card-item'>" + '$' + price + "</div>" +
+            //     "<div class='card-item'>" + item + "</div>" +
+            //     "<div class='card-item cart-button-container'><button class='rounded' id='interestButton" + offering_id + "'>Interested</button></div>" +
+            //     "</div>" +
+            //     "</div>";
+            
             offeringsHTML +=
-                "<div class='product col-sm-3'>" +
+                "<div class='product col-sm-3 card'>" +
                 "<a href = 'offering/" + offering_id + "'>" +
-                "<img src = '' id='offering" + i + "'>" +
+                "<img class='card-img-top' src = '' id='offering" + i + "'>" +
                 "</a>" +
-                "<div class='d-flex flex-column card-text'>" +
-                "<div class='card-item'>" + price + "</div>" +
-                "<div class='card-item'>" + item + "</div>" +
-                "<div class='card-item cart-button-container'><button class='rounded' id='interestButton" + offering_id + "'>Interested</button></div>" +
+                "<div class='card-body'>" +
+                "<div class='card-title'>" + '$' + price + "</div>" +
+                "<div class='card-text'>" + item + "</div>" +
+                "<button class='btn btn-primary' id='interestButton" + offering_id + "'>Interested</button>" +
                 "</div>" +
                 "</div>";
     
