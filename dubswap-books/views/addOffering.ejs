@@ -8,18 +8,41 @@
 
       <div class="form-group">
           <label for="itemName"><b>Item title</b></label>
-          <input type="text" class="form-control" name="itemName" id="itemName" placeholder="" required><br>
+          <input type="text" class="form-control" name="itemName" id="itemName" placeholder="eg: Building Java Programs" required><br>
       </div>
       
-      <div class="form-group">
-          <label for="price"><b>Price / Rent Per Month</b></label>
-          <input type="text" class="form-control" name="price" id="price" placeholder="" required><br>
-          <p id = "price-error" style="color:red"></p>
+      <label for="price"><b>Price / Rent Per Month</b></label><br>
+      <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" onclick="rentTypeSelected()" name="rentOption" id="rentRadio" value="rent">
+          <label class="form-check-label" for="rentRadio">rent</label>
       </div>
       
-      <div class="form-group">
-          <label for="itemType"><b>Item type</b></label>
-          <input type="text" class="form-control" name="itemType" id="itemType" placeholder=""><br>
+      <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" onclick="sellTypeSelected()" name="rentOption" id="sellRadio" value="sell">
+          <label class="form-check-label" for="sellRadio">sell</label>
+      </div>
+      
+      
+      
+      <div class="input-group" id="rent-type-input">
+      </div>
+      
+      <p id = "price-error" style="color:red"></p>
+      
+      
+      
+      <label for="itemType"><b>Item type</b></label><br>
+      <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" onclick="bookTypeSelected()" name="itemTypeOption" id="bookRadio" value="not-used">
+          <label class="form-check-label" for="bookRadio">book</label>
+      </div>
+      
+      <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" onclick="otherTypeSelected()" name="itemTypeOption" id="otherRadio" value="not-used">
+          <label class="form-check-label" for="otherRadio">other</label>
+      </div>
+      
+      <div id="type-div" class="input-group">
       </div>
       
       <div class="form-group">
@@ -79,7 +102,88 @@
       
       </form>
       
-      <script>
+<script>
+      // This function displays an input bar for the user to enter rent 
+      // per quarter information
+      function rentTypeSelected() {
+          var typeInput = $("#rent-type-input")
+          typeInput.text("")
+          var prependElement = jQuery('<div/>', {
+            class: 'input-group-prepend',
+          });
+          prependElement.prepend('<span class="input-group-text" id="rentPrepend">Per Quarter</span>')
+          var input = jQuery('<input>', {
+             type: 'text',
+             class: 'form-control',
+             name: 'price',
+             id: 'price',
+             placeholder: 'rent in dollars'
+          });
+          typeInput.prepend(input)
+          typeInput.prepend(prependElement)
+          document.getElementById("price").onkeyup = removeWarning
+      }
+      
+      // If the user indicates that he wants to sell the item, then we will
+      // display an input bar asking for the price.
+      function sellTypeSelected() {
+         var typeInput = $("#rent-type-input")
+          typeInput.text("")
+          var prependElement = jQuery('<div/>', {
+            class: 'input-group-prepend',
+          });
+          prependElement.prepend('<span class="input-group-text" id="rentPrepend">Price</span>')
+          var input = jQuery('<input>', {
+             type: 'text',
+             class: 'form-control',
+             name: 'price',
+             id: 'price',
+             placeholder: 'dollars'
+          });
+          typeInput.prepend(input)
+          typeInput.prepend(prependElement)
+          document.getElementById("price").onkeyup = removeWarning 
+      }
+      
+      // If the user indicates that he is uploading a book, 
+      // we ask the user for the author.
+      function bookTypeSelected() {
+          var typeInput = $("#type-div")
+          typeInput.text("")
+          var prependElement = jQuery('<div/>', {
+            class: 'input-group-prepend',
+          });
+          prependElement.append('<span class="input-group-text" id="rentPrepend">Author</span>')
+          var input = jQuery('<input>', {
+             type: 'text',
+             class: 'form-control',
+             name: 'itemType',
+             id: 'itemType',
+             placeholder: 'eg: Stuart Reges'
+          });
+          typeInput.prepend(input)
+          typeInput.prepend(prependElement)
+      }
+      
+      // If the user indicates that he is uploading a non-book item, 
+      // we ask the user for the type of the item. 
+      function otherTypeSelected() {
+           var typeInput = $("#type-div")
+          typeInput.text("")
+          var prependElement = jQuery('<div/>', {
+            class: 'input-group-prepend',
+          });
+          prependElement.append('<span class="input-group-text" id="rentPrepend">Type/Category</span>')
+          var input = jQuery('<input>', {
+             type: 'text',
+             class: 'form-control',
+             name: 'itemType',
+             id: 'itemType',
+             placeholder: 'eg: Ski Equipment'
+          });
+          typeInput.prepend(input)
+          typeInput.prepend(prependElement)
+      }
       
       function readUrlDp(input) {
         if (input.files && input.files[0]) {
@@ -153,30 +257,44 @@ function isImageUploaded(imageName) {
 }
 
 document.getElementById("offering-form").onsubmit = function () {
-    
-    var price = document.forms["offering-form"]["price"].value;
-
     var submit = true;
-
-    if (price == null || price == "" || isNotNumber(price)) {
-        nameError = "Invalid Price";
-        document.getElementById("price-error").innerHTML = nameError;
+    
+    // Check whether all the constraints have been met
+    
+    // Check whether user has specified price
+    var priceTypeNotSelected = (!document.getElementById('rentRadio').checked)
+                               && (!document.getElementById('sellRadio').checked)
+    if (priceTypeNotSelected) {
+        document.getElementById("price-error").innerHTML = "select price type";
         submit = false;
     }
+    
+    var priceElement = document.forms["offering-form"]["price"];
+    
+    // Check if the price is in the correct format.
+    if (priceElement != null) {
+        var price = priceElement.value;
+        if (price == null || price == "" || isNotNumber(price)) {
+            nameError = "Invalid Price";
+            document.getElementById("price-error").innerHTML = nameError;
+            submit = false;
+        }
+    }
+    
     // Check whether all four images have been uploaded.
     // If not, show the error beneath the input.
     submit = isImageUploaded('dp');
     submit = isImageUploaded('img1') && submit;
     submit = isImageUploaded('img2') && submit;
     submit = isImageUploaded('img3') && submit;
-    return submit;
+    return false;
 }
 
 function removeWarning() {
+    console.log(this.id + "-error")
     document.getElementById(this.id + "-error").innerHTML = "";
 }
 
-document.getElementById("price").onkeyup = removeWarning;
 document.getElementById("dp").onkeyup = removeWarning;
 </script>
   
