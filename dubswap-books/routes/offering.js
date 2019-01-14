@@ -181,15 +181,21 @@ module.exports = function(app){
         }]
     )], function(req, res) {
             var item = req.body.itemName;
-            var itemType = req.body.itemType;
-            var itemModel = req.body.itemModel;
+            console.log("item", item);
+            var itemAuthor = req.body.itemAuthor;
+            console.log("author", itemAuthor);
+            var isRent = req.body.isRent;
+            console.log("isRent", isRent);
+            var isBook = req.body.isBook;
+            console.log("isBook", isBook);
             var price = parseInt(req.body.price, 10);
+            console.log("price", price);
             if (isNaN(price)) {
                 res.render("message-template", {message: "Price cannot be a non-number. Please fill the form again."});
                 return;
             }
             var description = req.body.description;
-            
+            console.log("description", description);
             var pic_1 = null; // This is the display picture
             var pic_2 = null; // This is the second image
             var pic_3 = null; // this is the third image
@@ -205,7 +211,7 @@ module.exports = function(app){
                 return;
             }
         
-            pool.query("INSERT INTO offerings(item, user_id, description, price, item_type, item_model_author, image_1, image_2, image_3, image_4) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING offering_id;", [item, req.user.id, description, price, itemType, itemModel, pic_1, pic_2, pic_3, pic_4], 
+            pool.query("INSERT INTO offerings(item, user_id, description, price, author, is_rent, is_book, image_1, image_2, image_3, image_4) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING offering_id;", [item, req.user.id, description, price, itemAuthor, isRent, isBook, pic_1, pic_2, pic_3, pic_4], 
             function(err, result) {
                 if (err) {
                     console.log("There was some error while uploading the offering.");
@@ -230,7 +236,7 @@ module.exports = function(app){
                             console.log(resp);
                         }
                     });
-                    res.render("message-template", {message: "Your offering was succesfully added to the market."});
+                    res.render("message-template", {message: "Your offering was succesfully added to the market.", username: req.user.username});
                 }
             });
     });

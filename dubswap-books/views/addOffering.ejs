@@ -41,13 +41,9 @@
           <input class="form-check-input" type="radio" onclick="otherTypeSelected()" name="itemTypeOption" id="otherRadio" value="not-used">
           <label class="form-check-label" for="otherRadio">other</label>
       </div>
+      <p id = "item-type-error" style="color:red"></p>
       
       <div id="type-div" class="input-group">
-      </div>
-      
-      <div class="form-group">
-          <label for="itemModel"><b>Subtitle</b></label>
-          <input type="text" class="form-control" name="itemModel" id="itemModel" placeholder=""><br><br>
       </div>
       
       <div class="form-group">
@@ -148,6 +144,8 @@
       // If the user indicates that he is uploading a book, 
       // we ask the user for the author.
       function bookTypeSelected() {
+          // Clear the error
+          document.getElementById("item-type-error").innerHTML = "";
           var typeInput = $("#type-div")
           typeInput.text("")
           var prependElement = jQuery('<div/>', {
@@ -157,8 +155,8 @@
           var input = jQuery('<input>', {
              type: 'text',
              class: 'form-control',
-             name: 'itemType',
-             id: 'itemType',
+             name: 'itemAuthor',
+             id: 'itemAuthor',
              placeholder: 'eg: Stuart Reges'
           });
           typeInput.prepend(input)
@@ -168,22 +166,25 @@
       // If the user indicates that he is uploading a non-book item, 
       // we ask the user for the type of the item. 
       function otherTypeSelected() {
-           var typeInput = $("#type-div")
+          // Clear the error
+          document.getElementById("item-type-error").innerHTML = "";
+          var typeInput = $("#type-div")
           typeInput.text("")
           var prependElement = jQuery('<div/>', {
             class: 'input-group-prepend',
           });
-          prependElement.append('<span class="input-group-text" id="rentPrepend">Type/Category</span>')
+          prependElement.append('<span class="input-group-text" id="rentPrepend">Brand</span>')
           var input = jQuery('<input>', {
              type: 'text',
              class: 'form-control',
-             name: 'itemType',
-             id: 'itemType',
-             placeholder: 'eg: Ski Equipment'
+             name: 'itemAuthor',
+             id: 'itemAuthor',
+             placeholder: 'eg: The North Face'
           });
           typeInput.prepend(input)
           typeInput.prepend(prependElement)
       }
+      
       
       function readUrlDp(input) {
         if (input.files && input.files[0]) {
@@ -241,61 +242,95 @@
           }
       }
       
-function isNotNumber(text) {
-    return isNaN(text);
-}
-
-function isImageUploaded(imageName) {
-    if (document.getElementById(imageName).files.length == 0) {
-       nameError = "Please Upload Display Image";
-       document.getElementById(imageName + "-error").innerHTML = nameError;
-       return false;
-    } else {
-       document.getElementById(imageName + "-error").innerHTML = '';
+    function isNotNumber(text) {
+        return isNaN(text);
     }
-    return true;
-}
 
-document.getElementById("offering-form").onsubmit = function () {
-    var submit = true;
-    
-    // Check whether all the constraints have been met
-    
-    // Check whether user has specified price
-    var priceTypeNotSelected = (!document.getElementById('rentRadio').checked)
-                               && (!document.getElementById('sellRadio').checked)
-    if (priceTypeNotSelected) {
-        document.getElementById("price-error").innerHTML = "select price type";
-        submit = false;
-    }
-    
-    var priceElement = document.forms["offering-form"]["price"];
-    
-    // Check if the price is in the correct format.
-    if (priceElement != null) {
-        var price = priceElement.value;
-        if (price == null || price == "" || isNotNumber(price)) {
-            nameError = "Invalid Price";
-            document.getElementById("price-error").innerHTML = nameError;
-            submit = false;
+    function isImageUploaded(imageName) {
+        if (document.getElementById(imageName).files.length == 0) {
+           nameError = "Please Upload Display Image";
+           document.getElementById(imageName + "-error").innerHTML = nameError;
+           return false;
+        } else {
+           document.getElementById(imageName + "-error").innerHTML = '';
         }
+        return true;
     }
-    
-    // Check whether all four images have been uploaded.
-    // If not, show the error beneath the input.
-    submit = isImageUploaded('dp');
-    submit = isImageUploaded('img1') && submit;
-    submit = isImageUploaded('img2') && submit;
-    submit = isImageUploaded('img3') && submit;
-    return false;
-}
 
-function removeWarning() {
-    console.log(this.id + "-error")
-    document.getElementById(this.id + "-error").innerHTML = "";
-}
+    // Describes what all that should happen when you submit.
+    document.getElementById("offering-form").onsubmit = function () {
+        var submit = true;
+        
+        // Check whether all the constraints have been met
+        
+        // Check whether user has specified price
+        var priceTypeNotSelected = (!document.getElementById('rentRadio').checked)
+                                   && (!document.getElementById('sellRadio').checked)
+        if (priceTypeNotSelected) {
+            document.getElementById("price-error").innerHTML = "select price type";
+            submit = false;
+        } else {
+            // Add a field called isRent to the form.
+            if (document.getElementById('rentRadio').checked) {
+               $('<input />').attr('type', 'hidden')
+                             .attr('name', 'isRent')
+                             .attr('value', true)
+                             .appendTo('#offering-form');
+            } else {
+                $('<input />').attr('type', 'hidden')
+                             .attr('name', 'isRent')
+                             .attr('value', false)
+                             .appendTo('#offering-form');
+            }
+        }
+        
+        var itemTypeNotSelected = (!document.getElementById('bookRadio').checked)
+                                   && (!document.getElementById('otherRadio').checked)
+        if (itemTypeNotSelected) {
+            document.getElementById("item-type-error").innerHTML = "select price type";
+            submit = false;
+        } else {
+            // Add a field called isBook to the form.
+            if (document.getElementById('bookRadio').checked) {
+               $('<input />').attr('type', 'hidden')
+                             .attr('name', 'isBook')
+                             .attr('value', true)
+                             .appendTo('#offering-form');
+            } else {
+                $('<input />').attr('type', 'hidden')
+                             .attr('name', 'isBook')
+                             .attr('value', false)
+                             .appendTo('#offering-form');
+            }
+        }  
+        
+        var priceElement = document.forms["offering-form"]["price"];
+        
+        // Check if the price is in the correct format.
+        if (priceElement != null) {
+            var price = priceElement.value;
+            if (price == null || price == "" || isNotNumber(price)) {
+                nameError = "Invalid Price";
+                document.getElementById("price-error").innerHTML = nameError;
+                submit = false;
+            }
+        }
+        
+        // Check whether all four images have been uploaded.
+        // If not, show the error beneath the input.
+        submit = isImageUploaded('dp');
+        submit = isImageUploaded('img1') && submit;
+        submit = isImageUploaded('img2') && submit;
+        submit = isImageUploaded('img3') && submit;
+        return submit;
+    }
 
-document.getElementById("dp").onkeyup = removeWarning;
+    function removeWarning() {
+        console.log(this.id + "-error")
+        document.getElementById(this.id + "-error").innerHTML = "";
+    }
+
+    document.getElementById("dp").onkeyup = removeWarning;
 </script>
   
 </div>
