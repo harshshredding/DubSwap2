@@ -32,7 +32,7 @@ module.exports = function(app){
                     "query": {
                         "multi_match": {
                             "query": query,
-                            "fields": ["description", "item"]
+                            "fields": ["description", "item", "course", "author"]
                         }
                     }
                 }

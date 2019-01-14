@@ -190,6 +190,8 @@ module.exports = function(app){
             console.log("isBook", isBook);
             var price = parseInt(req.body.price, 10);
             console.log("price", price);
+            var course = req.body.itemCourse;
+            console.log("course", course);
             if (isNaN(price)) {
                 res.render("message-template", {message: "Price cannot be a non-number. Please fill the form again."});
                 return;
@@ -211,7 +213,7 @@ module.exports = function(app){
                 return;
             }
         
-            pool.query("INSERT INTO offerings(item, user_id, description, price, author, is_rent, is_book, image_1, image_2, image_3, image_4) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING offering_id;", [item, req.user.id, description, price, itemAuthor, isRent, isBook, pic_1, pic_2, pic_3, pic_4], 
+            pool.query("INSERT INTO offerings(item, user_id, description, price, author, is_rent, is_book, image_1, image_2, image_3, image_4, course) values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING offering_id;", [item, req.user.id, description, price, itemAuthor, isRent, isBook, pic_1, pic_2, pic_3, pic_4, course], 
             function(err, result) {
                 if (err) {
                     console.log("There was some error while uploading the offering.");
@@ -226,6 +228,8 @@ module.exports = function(app){
                         body: {
                             "item": item,
                             "description": description,
+                            "course": course,
+                            "author": itemAuthor,
                         }
                     }, function(err, resp, status) {
                         if (err) {
