@@ -1,0 +1,402 @@
+<% include partials/header %>
+      
+<link rel="stylesheet" href="/stylesheets/global.css">
+<link rel="stylesheet" href="/stylesheets/addOffering.css">
+
+<div class="container">
+  <form action="/edit-offering/<%= offeringID %>" method="POST" enctype="multipart/form-data" id="offering-form">
+      <div class="form-group">
+          <label for="itemName"><b>Item title</b></label>
+          <input type="text" class="form-control" value="<%= item %>" name="itemName" id="itemName" placeholder="eg: Building Java Programs" required><br>
+      </div>
+      
+      <label for="price"><b>Price / Rent Per Month</b></label><br>
+      <div class="form-check form-check-inline">
+          <% if(isRent == true){ %>
+            <input class="form-check-input" type="radio" onclick="rentTypeSelected()" name="rentOption" id="rentRadio" value="rent" checked="checked">
+          <% }else{ %>
+            <input class="form-check-input" type="radio" onclick="rentTypeSelected()" name="rentOption" id="rentRadio" value="rent"/>  
+          <% }%>
+          <label class="form-check-label" for="rentRadio">rent</label>
+      </div>
+      
+      <div class="form-check form-check-inline">
+          <% if(isRent == false){ %>
+            <input class="form-check-input" type="radio" onclick="sellTypeSelected()" name="rentOption" id="sellRadio" value="sell" checked="checked">
+          <% }else{ %>
+            <input class="form-check-input" type="radio" onclick="sellTypeSelected()" name="rentOption" id="sellRadio" value="sell">
+          <% }%>
+          <label class="form-check-label" for="sellRadio">sell</label>
+      </div>
+      
+      
+      
+      <div class="input-group" id="rent-type-input">
+          <% if(isRent == true){ %>
+          <div class="input-group-prepend">
+              <span class="input-group-text" id="rentPrepend">Per Quarter</span>
+          </div>
+          <% }else{ %>
+          <div class="input-group-prepend">
+              <span class="input-group-text" id="rentPrepend">Price</span>
+          </div>
+          <% } %>
+          <input class="form-control" name="price" id="price" value="<%= price %>">
+      </div>
+      <p id = "price-error" style="color:red"></p>
+      
+      
+      
+      <label for="itemType"><b>Item type</b></label><br>
+      <div class="form-check form-check-inline">
+          <% if(isBook == true){ %>
+            <input class="form-check-input" type="radio" onclick="bookTypeSelected()" name="itemTypeOption" id="bookRadio" value="not-used" checked="checked">
+          <% }else{ %>
+            <input class="form-check-input" type="radio" onclick="bookTypeSelected()" name="itemTypeOption" id="bookRadio" value="not-used">    
+          <% }%>
+          <label class="form-check-label" for="bookRadio">book</label>
+      </div>
+      
+      <div class="form-check form-check-inline">
+          <% if(isBook == false){ %>
+            <input class="form-check-input" type="radio" onclick="otherTypeSelected()" name="itemTypeOption" id="otherRadio" value="not-used" checked="checked">
+          <% }else{ %>
+            <input class="form-check-input" type="radio" onclick="otherTypeSelected()" name="itemTypeOption" id="otherRadio" value="not-used">
+          <% }%>
+          <label class="form-check-label" for="otherRadio">other</label>
+      </div>
+      <p id = "item-type-error" style="color:red"></p>
+      
+      <div id="type-div" class="input-group">
+          <% if(isBook == true){ %>
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="authorPrepend">Author</span>
+                </div>
+          <% }else{ %>
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="brandPrepend">Brand</span>
+                </div>
+          <% }%>
+          <input class="form-control" name="itemAuthor" id="itemAuthor" value="<%= author %>">
+          
+          <% if(isBook == true){ %>
+              <div class="input-group-prepend">
+                 <span class="input-group-text" id="authorPrepend">Course</span>
+              </div>
+              <input class="form-control" name="itemCourse" id="itemCourse" value="<%= course %>">
+          <% } %>
+      </div>
+      <div id="course-div" class="input-group">
+      </div>
+      
+      <div class="form-group">
+          <label for="description"><b>Item description<b></label>
+          <textarea class="form-control" rows="5" id="description" name="description" placeholder=""><%= description %></textarea><br><br>
+      </div>
+      
+      <div class="form-group">
+          <label for="displayPicture"><b>Upload Display Picture</b></label>
+          <input type='file' class="form-control" name='dp' id='dp' onchange="readUrlDp(this);"/>
+          <p id = "dp-error" style="color:red"></p>
+      </div>
+      
+      <div>
+      <img id="div-dp" class="image-preview" src="#" alt="preview" />
+      </div>
+      
+      <div class="form-group">
+          <label for="displayPicture"><b>Image Angle 1</b></label>
+          <input type='file' class="form-control" name='img1' id='img1' onchange="readUrlImg1(this);"/>
+          <p id = "img1-error" style="color:red"></p>
+      </div>
+      <div>
+      <img id="div-img1" class="image-preview" src="#" alt="preview" />
+      </div>
+      
+      <div class="form-group">
+          <label for="displayPicture"><b>Image Angle 2</b></label>
+          <input type='file' class="form-control" name='img2' id='img2' onchange="readUrlImg2(this);"/>
+          <p id = "img2-error" style="color:red"></p>
+      </div>
+      <div>
+      <img id="div-img2" class="image-preview" src="#" alt="preview" required/>
+      </div>
+      
+      <div class="form-group">
+          <label for="displayPicture"><b>Image Angle 3</b></label>
+          <input type='file' class="form-control" name='img3' id='img3' onchange="readUrlImg3(this);"/>
+          <p id = "img3-error" style="color:red"></p>
+      </div>
+      <div>
+      <img id="div-img3" class="image-preview" src="#" alt="preview" />
+      </div>
+      
+       <!--<label for="threePictures"><b>3 More pictures</b></label>-->
+       <!--<input type='file' name='otherImages' onchange="previewFiles();" id="files" multiple/>-->
+       <!--<div id="preview">-->
+       <!--</div>-->
+      <div class="container">
+      <button class="btn btn-primary" id="submit-button">Submit</button>
+      </div>
+      
+      </form>
+      
+<script>
+      // This function displays an input bar for the user to enter rent 
+      // per quarter information
+      function rentTypeSelected() {
+          var typeInput = $("#rent-type-input")
+          typeInput.text("")
+          var prependElement = jQuery('<div/>', {
+            class: 'input-group-prepend',
+          });
+          prependElement.prepend('<span class="input-group-text" id="rentPrepend">Per Quarter</span>')
+          var input = jQuery('<input>', {
+             type: 'text',
+             class: 'form-control',
+             name: 'price',
+             id: 'price',
+             placeholder: 'rent in dollars'
+          });
+          typeInput.prepend(input)
+          typeInput.prepend(prependElement)
+          document.getElementById("price").onkeyup = removeWarning
+      }
+      
+      // If the user indicates that he wants to sell the item, then we will
+      // display an input bar asking for the price.
+      function sellTypeSelected() {
+         var typeInput = $("#rent-type-input")
+          typeInput.text("")
+          var prependElement = jQuery('<div/>', {
+            class: 'input-group-prepend',
+          });
+          prependElement.prepend('<span class="input-group-text" id="rentPrepend">Price</span>')
+          var input = jQuery('<input>', {
+             type: 'text',
+             class: 'form-control',
+             name: 'price',
+             id: 'price',
+             placeholder: 'dollars'
+          });
+          typeInput.prepend(input)
+          typeInput.prepend(prependElement)
+          document.getElementById("price").onkeyup = removeWarning 
+      }
+      
+      // If the user indicates that he is uploading a book, 
+      // we ask the user for the author.
+      function bookTypeSelected() {
+          // Clear the error
+          document.getElementById("item-type-error").innerHTML = "";
+          var typeInput = $("#type-div")
+          typeInput.text("")
+          var courseInput = $("#course-div")
+          courseInput.text("")
+          
+          
+          var prependElementAuthor = jQuery('<div/>', {
+            class: 'input-group-prepend',
+          });
+          prependElementAuthor.append('<span class="input-group-text" id="authorPrepend">Author</span>')
+          var inputAuthor = jQuery('<input>', {
+             type: 'text',
+             class: 'form-control',
+             name: 'itemAuthor',
+             id: 'itemAuthor',
+             placeholder: 'eg: Stuart Reges'
+          });
+          typeInput.prepend(inputAuthor)
+          typeInput.prepend(prependElementAuthor)
+          
+          var prependElementCourse = jQuery('<div/>', {
+            class: 'input-group-prepend',
+          });
+          prependElementCourse.append('<span class="input-group-text" id="coursePrepend">Course</span>')
+          var inputCourse = jQuery('<input>', {
+             type: 'text',
+             class: 'form-control',
+             name: 'itemCourse',
+             id: 'itemCourse',
+             placeholder: 'eg: PSYCH 101'
+          });
+          courseInput.prepend(inputCourse)
+          courseInput.prepend(prependElementCourse)
+      }
+      
+      // If the user indicates that he is uploading a non-book item, 
+      // we ask the user for the type of the item. 
+      function otherTypeSelected() {
+          // Clear the error
+          document.getElementById("item-type-error").innerHTML = "";
+          
+          var typeInput = $("#type-div")
+          // Clear inputs
+          typeInput.text("")
+          $("#course-div").text("")
+          var prependElement = jQuery('<div/>', {
+            class: 'input-group-prepend',
+          });
+          prependElement.append('<span class="input-group-text" id="rentPrepend">Brand</span>')
+          var input = jQuery('<input>', {
+             type: 'text',
+             class: 'form-control',
+             name: 'itemAuthor',
+             id: 'itemAuthor',
+             placeholder: 'eg: The North Face'
+          });
+          typeInput.prepend(input)
+          typeInput.prepend(prependElement)
+      }
+      
+      
+      function readUrlDp(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            
+            reader.onload = function (e) {
+                $('#div-dp')
+                    .attr('src', e.target.result)
+                    .width('50%')
+            };
+
+            reader.readAsDataURL(input.files[0]);
+          }
+      }
+      
+     function readUrlImg1(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            
+            reader.onload = function (e) {
+                $('#div-img1')
+                    .attr('src', e.target.result)
+                    .width('50%')
+            };
+
+            reader.readAsDataURL(input.files[0]);
+          }
+      }
+      
+      function readUrlImg2(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            
+            reader.onload = function (e) {
+                $('#div-img2')
+                    .attr('src', e.target.result)
+                    .width('50%')
+            };
+
+            reader.readAsDataURL(input.files[0]);
+          }
+      }
+      
+      function readUrlImg3(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            
+            reader.onload = function (e) {
+                $('#div-img3')
+                    .attr('src', e.target.result)
+                    .width('50%')
+            };
+
+            reader.readAsDataURL(input.files[0]);
+          }
+      }
+      
+    function isNotNumber(text) {
+        return isNaN(text);
+    }
+
+    function isImageUploaded(imageName) {
+        if (document.getElementById(imageName).files.length == 0) {
+           nameError = "Please Upload Display Image";
+           document.getElementById(imageName + "-error").innerHTML = nameError;
+           return false;
+        } else {
+           document.getElementById(imageName + "-error").innerHTML = '';
+        }
+        return true;
+    }
+
+    // Describes what all that should happen when you submit.
+    document.getElementById("offering-form").onsubmit = function () {
+        var submit = true;
+        
+        // Check whether all the constraints have been met
+        
+        // Check whether user has specified price
+        var priceTypeNotSelected = (!document.getElementById('rentRadio').checked)
+                                   && (!document.getElementById('sellRadio').checked)
+        if (priceTypeNotSelected) {
+            document.getElementById("price-error").innerHTML = "select price type";
+            submit = false;
+        } else {
+            // Add a field called isRent to the form.
+            if (document.getElementById('rentRadio').checked) {
+               $('<input />').attr('type', 'hidden')
+                             .attr('name', 'isRent')
+                             .attr('value', true)
+                             .appendTo('#offering-form');
+            } else {
+                $('<input />').attr('type', 'hidden')
+                             .attr('name', 'isRent')
+                             .attr('value', false)
+                             .appendTo('#offering-form');
+            }
+        }
+        
+        var itemTypeNotSelected = (!document.getElementById('bookRadio').checked)
+                                   && (!document.getElementById('otherRadio').checked)
+        if (itemTypeNotSelected) {
+            document.getElementById("item-type-error").innerHTML = "select price type";
+            submit = false;
+        } else {
+            // Add a field called isBook to the form.
+            if (document.getElementById('bookRadio').checked) {
+               $('<input />').attr('type', 'hidden')
+                             .attr('name', 'isBook')
+                             .attr('value', true)
+                             .appendTo('#offering-form');
+            } else {
+                $('<input />').attr('type', 'hidden')
+                             .attr('name', 'isBook')
+                             .attr('value', false)
+                             .appendTo('#offering-form');
+            }
+        }  
+        
+        var priceElement = document.forms["offering-form"]["price"];
+        
+        // Check if the price is in the correct format.
+        if (priceElement != null) {
+            var price = priceElement.value;
+            if (price == null || price == "" || isNotNumber(price)) {
+                nameError = "Invalid Price";
+                document.getElementById("price-error").innerHTML = nameError;
+                submit = false;
+            }
+        }
+        
+        // Check whether all four images have been uploaded.
+        // If not, show the error beneath the input.
+        submit = isImageUploaded('dp');
+        submit = isImageUploaded('img1') && submit;
+        submit = isImageUploaded('img2') && submit;
+        submit = isImageUploaded('img3') && submit;
+        return submit;
+    }
+
+    function removeWarning() {
+        console.log(this.id + "-error")
+        document.getElementById(this.id + "-error").innerHTML = "";
+    }
+
+    document.getElementById("dp").onkeyup = removeWarning;
+</script>
+  
+</div>
+<% include partials/globalSocketIO %>
+<% include partials/footer %>

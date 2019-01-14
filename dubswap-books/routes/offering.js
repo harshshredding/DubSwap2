@@ -142,8 +142,8 @@ module.exports = function(app){
                             "<div class='d-flex flex-column card-text'>" + 
                               "<div class='card-item'>" + price + "$</div>" +
                               "<div class='card-item'>" + itemName + "</div>" +
+                              "<a href='/edit-offering/" + offering_id + "' class = 'btn btn-primary'>Edit</a>" +
                             "</div>"
-        
                             +
                             "</div>"
                             ;
@@ -157,7 +157,121 @@ module.exports = function(app){
         });
     });
     
+    app.get('/edit-offering/:offeringID', isLoggedIn, async function(req, res) {
+       try {
+         var offeringID = req.params.offeringID;
+         var offeringRows = await pool.query("SELECT * FROM offerings WHERE offering_id = $1;", [offeringID]);
+         if (offeringRows.rowCount == 0) {
+             console.log("MALICIOUS: Someone is trying to edit an offering" +
+             + "through non-conventional means, user : ", req.user.username)
+             res.render("message-template", {message: "There was an error while"
+              + " requesting an edit. Please try again.", username: req.user.username});
+         } else if (offeringRows.rowCount == 1) {
+             var item = offeringRows.rows[0].item;
+             var author = offeringRows.rows[0].author;
+             var course = offeringRows.rows[0].course;
+             var isRent = offeringRows.rows[0].is_rent;
+             var isBook = offeringRows.rows[0].is_book;
+             var price = offeringRows.rows[0].price;
+             var description = offeringRows.rows[0].description;
+             res.render('editOffering', {
+                 item: item,
+                 author: author,
+                 course: course,
+                 isRent: isRent,
+                 isBook: isBook,
+                 price: price,
+                 description: description,
+                 offeringID: offeringID
+             });
+         } else {
+             console.log("ERROR: Two offerings had the same id !!!! : ", req.params.offeringID)
+             res.render("message-template", {message: "There was an error while"
+             + " requesting an edit. Please try again.", username: req.user.username});
+         }
+       } catch(err) {
+         console.log("There was an error while preparing the"
+         + "edit page for offering.", err) 
+       }
+    });
     
+    app.post('/edit-offering/:offeringID', [isLoggedIn, addTime, 
+    memoryUpload.fields(
+        [{
+            name: 'dp',
+            maxCount: 1
+        }, {
+            name: 'img1',
+            maxCount: 1
+        }, {
+            name: 'img2',
+            maxCount: 1
+        }, {
+            name: 'img3',
+            maxCount: 1
+        }]
+    )], async function(req, res) {
+       try {
+         var offeringID = req.params.offeringID;
+         var offeringRows = await pool.query("SELECT * FROM offerings WHERE offering_id = $1 AND user_id=$2;", [offeringID, req.user.id]);
+         if (offeringRows.rowCount == 0) {
+             console.log("MALICIOUS: Someone is trying to edit an offering" +
+             + "that does not belong to user : ", req.user.username)
+             res.render("message-template", {message: "There was an error while"
+              + " requesting an edit. Please try again.", username: req.user.username});
+         } else if (offeringRows.rowCount == 1) {
+            var test = req.body.itemBoy;
+            console.log(test);
+            var item = req.body.itemName;
+            console.log("item", item);
+            var itemAuthor = req.body.itemAuthor;
+            console.log("author", itemAuthor);
+            var isRent = req.body.isRent;
+            console.log("isRent", isRent);
+            var isBook = req.body.isBook;
+            console.log("isBook", isBook);
+            var price = parseInt(req.body.price, 10);
+            console.log("price", price);
+            if (isNaN(price)) {
+                res.render("message-template", {message: "Price cannot be a non-number. Please fill the form again."});
+                return;
+            }
+            var course = req.body.itemCourse;
+            console.log("course", course);
+            var description = req.body.description;
+            console.log("description", description);
+            var pic_1 = null; // This is the display picture
+            var pic_2 = null; // This is the second image
+            var pic_3 = null; // this is the third image
+            var pic_4 = null; // this is the fourth image
+            if (req.files['dp'].length == 1 && req.files['img1'].length == 1
+            && req.files['img2'].length == 1 && req.files['img3'].length == 1) {
+                pic_1 = helper.getHexFromBuffer(req.files['dp'][0].buffer);
+                pic_2 = helper.getHexFromBuffer(req.files['img1'][0].buffer);
+                pic_3 = helper.getHexFromBuffer(req.files['img2'][0].buffer);
+                pic_4 = helper.getHexFromBuffer(req.files['img3'][0].buffer);
+            } else {
+                res.send("Make sure you uploaded one of each 4 images");
+                return;
+            }
+            var offeringUpdatedResult = await pool.query(
+            " UPDATE offerings SET" + 
+            " author=$1, is_rent=$2, is_book=$3, price=$4, course=$5," + 
+            " description=$6, image_1=$7, image_2=$8, image_3=$9, image_4=$10," + 
+            " item=$11 WHERE offering_id=$12 AND user_id = $13;", 
+            [itemAuthor, isRent, isBook, price, course, description, pic_1, 
+             pic_2, pic_3, pic_4, item, offeringID, req.user.id]);
+            res.render("message-template", {message: "Your offering was " +
+            "succesfully updated", username: req.user.username});
+         } else {
+             console.log("ERROR: Two offerings had the same id !!!! : ", req.params.offeringID)
+             res.render("message-template", {message: "There was an error while"
+             + " requesting an edit. Please try again.", username: req.user.username});
+         }
+       } catch(err) {
+         console.log("There was an error while updating offering during post request.", err) 
+       }
+    });
     
     app.get("/addOffering", isLoggedIn, function(req, res) {
         res.render("addOffering", {username: req.user.username});
