@@ -42,12 +42,16 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser((id, cb) => {
   db.query('SELECT id, username, type FROM users WHERE id = $1', [parseInt(id, 10)], (err, results) => {
-    if(err) {
-      console.log('Error when selecting user on session deserialize: ' + err);
+    if (err) {
+      console.log('Error while getting user info for deserialization:' + err);
       return cb(err);
+    } else if (results.rowCount == 0) {
+      // If we fail to deserialize after finding a match in the session store,
+      // simply invalidate session.
+      cb(null, false);
+    } else {
+      cb(null, results.rows[0]);
     }
-
-    cb(null, results.rows[0]);
   });
 });
 
