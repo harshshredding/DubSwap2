@@ -10,15 +10,15 @@ img{
     margin-bottom: 2rem;
 }
 
-
-
 .product{
     /*height: 400px;*/
     margin-bottom: 20px;
 }
 
-.product img{
-    height: 70%;
+.product img {
+    height: 15rem;
+    object-fit: cover;
+    width: 100%;
 }
 
 /*.card-text{*/

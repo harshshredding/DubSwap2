@@ -25,6 +25,37 @@ module.exports = {
             return false;
         });
     },
+    
+    // Sends an email to the given email with the given subject and body.
+    sendEmailGeneral: function (emailAddress, emailBody, emailSubject) {
+        let transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: "dubswap2018@gmail.com", // generated ethereal user
+                pass: "ilovedubswap2018" // generated ethereal password
+            }
+        });
+        
+        // setup email data with unicode symbols
+        let mailOptions = {
+            from: 'DubSwap', // sender address
+            to: emailAddress, // list of receivers
+            subject: emailSubject, // Subject line
+            text: emailBody, // plain text body
+            html: emailBody // html body
+        };
+        
+        // send mail with defined transport object
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                return console.log(error);
+            }
+            console.log('Message sent: %s', info.messageId);
+            // Preview only available when sending through an Ethereal account
+            console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+        });
+    },
+    
     // sends an email with the given hash appended to the link to 
     // username@uw.edu and 'type' parameter dictates which kind of email it is.
     sendEmail: function(hash, email, username,type) {
@@ -32,8 +63,8 @@ module.exports = {
         let transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: "harshshredding@gmail.com", // generated ethereal user
-                pass: "***REMOVED***" // generated ethereal password
+                user: "dubswap2018@gmail.com", // generated ethereal user
+                pass: "ilovedubswap2018" // generated ethereal password
             }
         });
         

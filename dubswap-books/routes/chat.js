@@ -16,6 +16,9 @@ var fs = require('fs');
 var mkdirp = require('mkdirp');
 var elasticClient = require("../elasticsearch/connection.js");
 
+async function sendMesageEmailHelper() {
+    
+}
 
 module.exports = function(app, io, pool, store){
     // renders registration page
@@ -92,10 +95,11 @@ module.exports = function(app, io, pool, store){
                 var conversation_id = data.conversation_id;
                 var message = data.message;
                 var qResult = await pool.query("SELECT first_user_id," +
-                    "second_user_id FROM conversations WHERE id = $1 AND (first_user_id = $2 OR second_user_id = $2);", [conversation_id, fromId]);
+                    "second_user_id, offering_id FROM conversations WHERE id = $1 AND (first_user_id = $2 OR second_user_id = $2);", [conversation_id, fromId]);
                 if (qResult.rowCount == 1) {
                     // If the conversation exists and the user is legit.
                     var toId = (qResult.rows[0].first_user_id == fromId) ? qResult.rows[0].second_user_id : qResult.rows[0].first_user_id;
+                    var offering_id = qResult.rows[0].offering_id;
                     pool.query("INSERT INTO messages(from_id, to_id, content, conversation_id) VALUES ($1, $2, $3, $4);", [fromId, toId, message, conversation_id],
                                 function(err, res) {
                                     if (err) {
@@ -105,12 +109,38 @@ module.exports = function(app, io, pool, store){
                                       updateLastSeenState(conversation_id, client_user_id);
                                     }
                                 });
-                    qResult = await pool.query("SELECT username, socket_id, online FROM users WHERE id = $1;", [toId]);
+                    qResult = await pool.query("SELECT username, socket_id, online, email FROM users WHERE id = $1;", [toId]);
                     if (qResult.rowCount == 1) {
                         // If the recipient exists.
                         // Ask recipient to check for new notification in the database
                         // and don't wait for him to be online (Let us be on the
                         // safer side).
+                        pool.query("select * from users where id=$1;", [fromId], async function(err, res) {
+                            if (err) {
+                                console.log("There was an error while fetching information" +
+                                 + " about the user who sent the message", err);
+                            } else {
+                                if (res.rowCount != 0) { // If we found user info.
+                                    var toEmail = qResult.rows[0].email;
+                                    var fromUsername = res.rows[0].username;
+                                    try {
+                                        var offeringQuery = await pool.query("SELECT item FROM offerings WHERE "
+                                        + " offering_id = $1", [offering_id]);
+                                        if (offeringQuery.rowCount != 0) {
+                                            var emailBody = fromUsername + " sent you message regarding "
+                                            + offeringQuery.rows[0].item + ": \n" + message;
+                                            emailer.sendEmailGeneral(toEmail, emailBody, "New message from " + fromUsername);
+                                        }
+                                    } catch (err) {
+                                        console.log("Error while getting offering item info for the new message.", err);
+                                    }
+                                } else {
+                                    console.log("Trying to send email to someone who" +
+                                    + " doesn't exist. Id : ", toId);
+                                }
+                            }
+                        });
+                        
                         io.to(qResult.rows[0].socket_id).emit('check-for-notification');
                         if (qResult.rows[0].online == true) {
                             // If recipient is online he automatically noticies
